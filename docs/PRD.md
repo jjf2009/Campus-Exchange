@@ -1,4 +1,4 @@
-# GEC Exchange
+# Campus Exchange
 ### Product Requirements Document (PRD)
 **Version:** 1.0 (MVP)
 **Target Launch:** Monday
@@ -11,7 +11,7 @@
 
 ## Overview
 
-GEC Exchange is a marketplace exclusively for students of Goa College of Engineering (GEC) to buy and sell used academic equipment, electronics, books, hostel items, and other student essentials.
+Campus Exchange is a marketplace exclusively for students of Goa College of Engineering (GEC) to buy and sell used academic equipment, electronics, books, hostel items, and other student essentials.
 
 Every year senior students finish using expensive equipment like:
 
