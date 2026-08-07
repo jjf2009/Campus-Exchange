@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { getListingById } from "@/db/queries/listings";
 import { getRequestForListing } from "@/db/queries/requests";
 import { requireCompleteProfile } from "@/lib/auth";
+import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 import { formatFullDate, formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
 import type { ListingStatus } from "@/types";
@@ -37,6 +38,7 @@ export default async function ListingDetailPage({
   const user = await requireCompleteProfile();
   const { id } = await params;
   const listing = await getListingById(id);
+  const notifications = await getNavbarNotifications(user.id);
 
   if (!listing || listing.status === "ARCHIVED") {
     notFound();
@@ -55,12 +57,18 @@ export default async function ListingDetailPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar user={user} />
+      <Navbar user={user} notifications={notifications} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <Button variant="ghost" size="sm" className="mb-6" render={<Link href="/marketplace" />} nativeButton={false}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to marketplace
-            </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-6"
+          render={<Link href="/marketplace" />}
+          nativeButton={false}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to marketplace
+        </Button>
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="relative aspect-square overflow-hidden rounded-2xl border bg-muted">
@@ -113,9 +121,7 @@ export default async function ListingDetailPage({
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Branch</dt>
-                  <dd className="font-medium">
-                    {listing.sellerBranch ?? "—"}
-                  </dd>
+                  <dd className="font-medium">{listing.sellerBranch ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Year</dt>
@@ -161,9 +167,14 @@ export default async function ListingDetailPage({
                       Check your dashboard requests for the seller&apos;s
                       WhatsApp number.
                     </p>
-                    <Button size="sm" className="mt-3" render={<Link href="/dashboard/requests" />} nativeButton={false}>
-              View contact
-            </Button>
+                    <Button
+                      size="sm"
+                      className="mt-3"
+                      render={<Link href="/dashboard/requests" />}
+                      nativeButton={false}
+                    >
+                      View contact
+                    </Button>
                   </div>
                 ) : null}
                 {existingRequest?.status === "REJECTED" ? (

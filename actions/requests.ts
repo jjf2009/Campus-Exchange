@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { listings, purchaseRequests, users } from "@/db/schema";
 import { requireCompleteProfile } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications/notification-service";
 import {
   sendRequestAcceptedEmail,
   sendRequestRejectedEmail,
@@ -61,6 +62,19 @@ export async function createRequest(
         status: "PENDING",
       })
       .returning({ id: purchaseRequests.id });
+
+    await createNotification({
+      userId: listing.sellerId,
+      type: "NEW_REQUEST",
+      title: `New request for ${listing.title}`,
+      message: `${user.name} requested your listing ${listing.title}.`,
+      data: {
+        href: "/dashboard/requests",
+        listingId,
+        requestId: created.id,
+        buyerId: user.id,
+      },
+    });
 
     revalidatePath(`/listing/${listingId}`);
     revalidatePath("/dashboard/requests");
@@ -157,6 +171,7 @@ export async function acceptRequest(requestId: string): Promise<ActionResult> {
 
     const rejected = await db
       .select({
+        id: users.id,
         email: users.email,
         name: users.name,
       })
@@ -178,6 +193,33 @@ export async function acceptRequest(requestId: string): Promise<ActionResult> {
         })
       )
     );
+
+    await Promise.all([
+      createNotification({
+        userId: request.buyerId,
+        type: "REQUEST_ACCEPTED",
+        title: `Request accepted for ${request.listingTitle}`,
+        message: `Your request for ${request.listingTitle} was accepted.`,
+        data: {
+          href: "/dashboard/requests",
+          listingId: request.listingId,
+          requestId,
+        },
+      }),
+      ...rejected.map((r) =>
+        createNotification({
+          userId: r.id,
+          type: "REQUEST_REJECTED",
+          title: `Request update for ${request.listingTitle}`,
+          message: `Your request for ${request.listingTitle} was not accepted.`,
+          data: {
+            href: "/dashboard/requests",
+            listingId: request.listingId,
+            requestId,
+          },
+        })
+      ),
+    ]);
 
     revalidatePath("/dashboard/requests");
     revalidatePath("/dashboard");
@@ -242,6 +284,18 @@ export async function rejectRequest(requestId: string): Promise<ActionResult> {
         listingTitle: request.listingTitle,
       });
     }
+
+    await createNotification({
+      userId: request.buyerId,
+      type: "REQUEST_REJECTED",
+      title: `Request update for ${request.listingTitle}`,
+      message: `Your request for ${request.listingTitle} was not accepted.`,
+      data: {
+        href: "/dashboard/requests",
+        listingId: request.listingId,
+        requestId,
+      },
+    });
 
     revalidatePath("/dashboard/requests");
     revalidatePath("/dashboard");

@@ -6,6 +6,7 @@ import {
   timestamp,
   pgEnum,
   index,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -20,6 +21,13 @@ export const requestStatusEnum = pgEnum("request_status", [
   "PENDING",
   "ACCEPTED",
   "REJECTED",
+]);
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "NEW_REQUEST",
+  "REQUEST_ACCEPTED",
+  "REQUEST_REJECTED",
+  "LISTING_SOLD",
 ]);
 
 export const users = pgTable("users", {
@@ -92,9 +100,36 @@ export const purchaseRequests = pgTable(
   ]
 );
 
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: notificationTypeEnum("type").notNull(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+    isRead: integer("is_read", { mode: "boolean" }).notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("notifications_user_id_idx").on(table.userId),
+    index("notifications_is_read_idx").on(table.isRead),
+    index("notifications_created_at_idx").on(table.createdAt),
+  ]
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   listings: many(listings),
   purchaseRequests: many(purchaseRequests),
+  notifications: many(notifications),
 }));
 
 export const listingsRelations = relations(listings, ({ one, many }) => ({
@@ -119,9 +154,18 @@ export const purchaseRequestsRelations = relations(
   })
 );
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
 export type DbUser = typeof users.$inferSelect;
 export type NewDbUser = typeof users.$inferInsert;
 export type DbListing = typeof listings.$inferSelect;
 export type NewDbListing = typeof listings.$inferInsert;
 export type DbPurchaseRequest = typeof purchaseRequests.$inferSelect;
 export type NewDbPurchaseRequest = typeof purchaseRequests.$inferInsert;
+export type DbNotification = typeof notifications.$inferSelect;
+export type NewDbNotification = typeof notifications.$inferInsert;

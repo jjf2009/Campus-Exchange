@@ -4,8 +4,9 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { listings } from "@/db/schema";
+import { listings, purchaseRequests } from "@/db/schema";
 import { requireCompleteProfile } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications/notification-service";
 import { uploadListingImage } from "@/lib/storage";
 import { listingSchema } from "@/lib/validations";
 import type { ActionResult } from "@/types";
@@ -70,9 +71,7 @@ export async function createListing(
   }
 }
 
-export async function updateListing(
-  formData: FormData
-): Promise<ActionResult> {
+export async function updateListing(formData: FormData): Promise<ActionResult> {
   try {
     const user = await requireCompleteProfile();
     const id = formData.get("id");
@@ -182,7 +181,9 @@ export async function deleteListing(listingId: string): Promise<ActionResult> {
   }
 }
 
-export async function markListingSold(listingId: string): Promise<ActionResult> {
+export async function markListingSold(
+  listingId: string
+): Promise<ActionResult> {
   try {
     const user = await requireCompleteProfile();
 
@@ -200,10 +201,36 @@ export async function markListingSold(listingId: string): Promise<ActionResult> 
       return { success: false, error: "Listing is already sold" };
     }
 
+    const acceptedRequest = await db
+      .select({
+        buyerId: purchaseRequests.buyerId,
+      })
+      .from(purchaseRequests)
+      .where(
+        and(
+          eq(purchaseRequests.listingId, listingId),
+          eq(purchaseRequests.status, "ACCEPTED")
+        )
+      )
+      .limit(1);
+
     await db
       .update(listings)
       .set({ status: "SOLD", updatedAt: new Date() })
       .where(eq(listings.id, listingId));
+
+    if (acceptedRequest[0]?.buyerId) {
+      await createNotification({
+        userId: acceptedRequest[0].buyerId,
+        type: "LISTING_SOLD",
+        title: `${existing.title} marked as sold`,
+        message: `The seller marked ${existing.title} as sold.`,
+        data: {
+          href: "/dashboard/requests",
+          listingId,
+        },
+      });
+    }
 
     revalidatePath("/marketplace");
     revalidatePath("/dashboard");

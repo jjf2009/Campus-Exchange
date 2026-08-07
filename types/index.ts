@@ -1,10 +1,16 @@
 export type ListingStatus =
-  | "AVAILABLE"
-  | "PENDING_APPROVAL"
-  | "SOLD"
-  | "ARCHIVED";
+  "AVAILABLE" | "PENDING_APPROVAL" | "SOLD" | "ARCHIVED";
 
 export type RequestStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+
+export type NotificationType =
+  "NEW_REQUEST" | "REQUEST_ACCEPTED" | "REQUEST_REJECTED" | "LISTING_SOLD";
+
+export interface NotificationData {
+  href?: string;
+  [key: string]:
+    string | number | boolean | null | undefined | NotificationData;
+}
 
 export type Branch =
   | "Computer"
@@ -16,11 +22,7 @@ export type Branch =
   | "Mining"
   | "VLSI";
 
-export type Year =
-  | "First Year"
-  | "Second Year"
-  | "Third Year"
-  | "Final Year";
+export type Year = "First Year" | "Second Year" | "Third Year" | "Final Year";
 
 export type Condition = "New" | "Like New" | "Good" | "Fair" | "Poor";
 
@@ -78,6 +80,33 @@ export interface PurchaseRequest {
   status: RequestStatus;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data: NotificationData;
+  isRead: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface NavbarNotificationItem {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  href: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NavbarNotificationSummary {
+  unreadCount: number;
+  items: NavbarNotificationItem[];
 }
 
 export interface ListingWithSeller extends Listing {

@@ -11,6 +11,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
 import { getMarketplaceListings } from "@/db/queries/listings";
 import { requireCompleteProfile } from "@/lib/auth";
+import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 import type { Category, Condition } from "@/types";
 
 export const metadata = {
@@ -24,10 +25,11 @@ export default async function MarketplacePage({
 }) {
   const user = await requireCompleteProfile();
   const params = await searchParams;
+  const notifications = await getNavbarNotifications(user.id);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar user={user} />
+      <Navbar user={user} notifications={notifications} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -37,16 +39,22 @@ export default async function MarketplacePage({
             </p>
           </div>
           <Button render={<Link href="/new-listing" />} nativeButton={false}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Sell an item
-            </Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Sell an item
+          </Button>
         </div>
 
         <div className="mb-6 space-y-4">
-          <Suspense fallback={<div className="h-11 animate-pulse rounded-md bg-muted" />}>
+          <Suspense
+            fallback={
+              <div className="h-11 animate-pulse rounded-md bg-muted" />
+            }
+          >
             <SearchBar placeholder="Search boiler, drafter, calculator…" />
           </Suspense>
-          <Suspense fallback={<div className="h-9 animate-pulse rounded-md bg-muted" />}>
+          <Suspense
+            fallback={<div className="h-9 animate-pulse rounded-md bg-muted" />}
+          >
             <CategoryFilter />
           </Suspense>
         </div>
@@ -80,8 +88,8 @@ async function MarketplaceGrid({
         }
         action={
           <Button render={<Link href="/new-listing" />} nativeButton={false}>
-              Create listing
-            </Button>
+            Create listing
+          </Button>
         }
       />
     );
