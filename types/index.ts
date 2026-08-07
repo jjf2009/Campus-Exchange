@@ -13,7 +13,8 @@ export type Branch =
   | "Electrical"
   | "Mechanical"
   | "Civil"
-  | "Mining";
+  | "Mining"
+  | "VLSI";
 
 export type Year =
   | "First Year"
@@ -39,6 +40,9 @@ export type Category =
   | "Mattress"
   | "Bucket"
   | "Table"
+  | "Cooler"
+  | "Fan"
+  | "Induction"
   | "Others";
 
 export interface User {

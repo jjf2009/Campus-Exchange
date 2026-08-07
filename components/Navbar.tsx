@@ -18,6 +18,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { APP_NAME } from "@/lib/constants";
 
@@ -81,42 +82,44 @@ export function Navbar({ user }: NavbarProps) {
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col">
-                    <span>{user.name}</span>
-                    <span className="text-xs font-normal text-muted-foreground">
-                      {user.email}
-                    </span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="sm:hidden"
-                  render={<Link href="/marketplace" />}
-                >
-                  <Store className="mr-2 h-4 w-4" />
-                  Marketplace
-                </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href="/dashboard" />}>
-                  <LayoutDashboard className="mr-2 h-4 w-4" />
-                  Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href="/dashboard/profile" />}>
-                  <UserRound className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="p-0 focus:bg-transparent">
-                  <form action={signOut} className="w-full">
-                    <button
-                      type="submit"
-                      className="flex w-full items-center rounded-md px-1.5 py-1 text-sm outline-none hover:bg-accent"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Logout
-                    </button>
-                  </form>
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span>{user.name}</span>
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {user.email}
+                      </span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="sm:hidden"
+                    render={<Link href="/marketplace" />}
+                  >
+                    <Store className="mr-2 h-4 w-4" />
+                    Marketplace
+                  </DropdownMenuItem>
+                  <DropdownMenuItem render={<Link href="/dashboard" />}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem render={<Link href="/dashboard/profile" />}>
+                    <UserRound className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="p-0 focus:bg-transparent">
+                    <form action={signOut} className="w-full">
+                      <button
+                        type="submit"
+                        className="flex w-full items-center rounded-md px-1.5 py-1 text-sm outline-none hover:bg-accent"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </button>
+                    </form>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </nav>

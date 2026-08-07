@@ -21,6 +21,7 @@ export const BRANCHES: Branch[] = [
   "Mechanical",
   "Civil",
   "Mining",
+  "VLSI"
 ];
 
 export const YEARS: Year[] = [
@@ -54,6 +55,9 @@ export const CATEGORIES: Category[] = [
   "Mattress",
   "Bucket",
   "Table",
+  "Cooler",
+  "Fan",
+  "Induction",
   "Others",
 ];
 

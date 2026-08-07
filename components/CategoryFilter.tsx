@@ -22,28 +22,27 @@ export function CategoryFilter() {
 
   const options = ["all", ...CATEGORIES];
 
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-      {options.map((category) => {
-        const isActive = active === category;
-        return (
-          <button
-            key={category}
-            type="button"
-            onClick={() => {
-              select(category);
-            }}
-            className={cn(
-              "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
-              isActive
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
-            )}
-          >
-            {category === "all" ? "All" : category}
-          </button>
-        );
-      })}
-    </div>
-  );
+return (
+  <div className="flex flex-wrap gap-2">
+    {options.map((category) => {
+      const isActive = active === category;
+
+      return (
+        <button
+          key={category}
+          type="button"
+          onClick={() => select(category)}
+          className={cn(
+            "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
+            isActive
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+          )}
+        >
+          {category === "all" ? "All" : category}
+        </button>
+      );
+    })}
+  </div>
+);
 }
