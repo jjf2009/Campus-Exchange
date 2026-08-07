@@ -39,7 +39,7 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  const publicPaths = ["/", "/login", "/auth/callback"];
+  const publicPaths = ["/", "/login", "/auth/callback", "/api/health"];
   const isPublic =
     publicPaths.includes(path) || path.startsWith("/auth/");
 

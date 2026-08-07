@@ -30,7 +30,9 @@ export function CategoryFilter() {
           <button
             key={category}
             type="button"
-            onClick={() => select(category)}
+            onClick={() => {
+              select(category);
+            }}
             className={cn(
               "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
               isActive

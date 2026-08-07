@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -18,10 +20,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { APP_NAME } from "@/lib/constants";
-import type { DbUser } from "@/db/schema";
+
+export interface NavbarUser {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+}
 
 interface NavbarProps {
-  user?: DbUser | null;
+  user?: NavbarUser | null;
 }
 
 export function Navbar({ user }: NavbarProps) {
@@ -98,13 +106,12 @@ export function Navbar({ user }: NavbarProps) {
                   Profile
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    // form submit fallback handled below
-                  }}
-                >
+                <DropdownMenuItem className="p-0 focus:bg-transparent">
                   <form action={signOut} className="w-full">
-                    <button type="submit" className="flex w-full items-center">
+                    <button
+                      type="submit"
+                      className="flex w-full items-center rounded-md px-1.5 py-1 text-sm outline-none hover:bg-accent"
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       Logout
                     </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -170,8 +171,9 @@ export function ListingForm({ mode, listing }: ListingFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.back()}
           disabled={isPending}
+          render={<Link href={mode === "edit" && listing ? `/listing/${listing.id}` : "/marketplace"} />}
+          nativeButton={false}
         >
           Cancel
         </Button>

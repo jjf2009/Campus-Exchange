@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 
 interface RequestButtonProps {
@@ -69,9 +70,7 @@ export function RequestButton({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 sm:w-auto"
-      >
+      <DialogTrigger className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 sm:w-auto">
         Request Item
       </DialogTrigger>
       <DialogContent>
@@ -83,13 +82,11 @@ export function RequestButton({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={isPending}
+          <DialogClose
+            render={<Button variant="outline" disabled={isPending} />}
           >
             Cancel
-          </Button>
+          </DialogClose>
           <Button onClick={handleRequest} disabled={isPending}>
             {isPending ? (
               <>
