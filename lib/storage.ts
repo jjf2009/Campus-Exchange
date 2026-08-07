@@ -28,6 +28,15 @@ export async function uploadListingImage(
 
   if (error) {
     console.error("Image upload failed:", error.message);
+    if (
+      error.message.toLowerCase().includes("bucket") ||
+      error.message.toLowerCase().includes("not found")
+    ) {
+      return {
+        error:
+          'Storage bucket "listing-images" is missing. Create a public bucket named listing-images in Supabase Storage.',
+      };
+    }
     return { error: "Failed to upload image. Please try again." };
   }
 
