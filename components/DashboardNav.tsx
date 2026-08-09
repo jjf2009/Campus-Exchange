@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Inbox, LayoutDashboard, Package, UserRound } from "lucide-react";
+import { Inbox, LayoutDashboard, Package, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/listings", label: "My Listings", icon: Package },
   { href: "/dashboard/requests", label: "Requests", icon: Inbox },
   { href: "/dashboard/profile", label: "Profile", icon: UserRound },

@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { BrowserNotifications } from "@/components/BrowserNotifications";
 import { formatRelativeDate } from "@/utils/formatDate";
 import { APP_NAME } from "@/lib/constants";
 import type { NavbarNotificationSummary } from "@/types";
@@ -74,6 +75,10 @@ export function Navbar({ user, notifications }: NavbarProps) {
               <span className="hidden sm:inline">New Listing</span>
               <span className="sm:hidden">Sell</span>
             </Button>
+            <BrowserNotifications
+              notifications={notifications}
+              autoPrompt={true}
+            />
 
             <DropdownMenu>
               <DropdownMenuTrigger className="relative inline-flex size-9 items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
@@ -136,9 +141,9 @@ export function Navbar({ user, notifications }: NavbarProps) {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  render={<Link href="/dashboard/notifications" />}
+                  render={<Link href="/dashboard/requests" />}
                 >
-                  View all notifications
+                  View all requests
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
