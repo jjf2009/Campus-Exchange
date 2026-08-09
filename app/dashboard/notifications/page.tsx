@@ -61,7 +61,12 @@ export default async function NotificationsPage({
             </p>
           </div>
 
-          <form action={markAllNotificationsReadAction}>
+          <form
+            action={async () => {
+              "use server";
+              await markAllNotificationsReadAction();
+            }}
+          >
             <Button
               type="submit"
               variant="outline"
@@ -119,10 +124,10 @@ export default async function NotificationsPage({
                     </Button>
                     {!notification.isRead ? (
                       <form
-                        action={markNotificationReadAction.bind(
-                          null,
-                          notification.id
-                        )}
+                        action={async () => {
+                          "use server";
+                          await markNotificationReadAction(notification.id);
+                        }}
                       >
                         <Button type="submit" size="sm">
                           Mark read

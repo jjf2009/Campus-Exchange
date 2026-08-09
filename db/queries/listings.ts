@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { listings, users } from "@/db/schema";
 import type { Category } from "@/types";
@@ -6,6 +6,8 @@ import type { Category } from "@/types";
 export async function getMarketplaceListings(options?: {
   search?: string;
   category?: string;
+  limit?: number;
+  offset?: number;
 }) {
   const conditions = [eq(listings.status, "AVAILABLE")];
 
@@ -20,7 +22,7 @@ export async function getMarketplaceListings(options?: {
     conditions.push(eq(listings.category, options.category as Category));
   }
 
-  return db
+  const baseQuery = db
     .select({
       id: listings.id,
       sellerId: listings.sellerId,
@@ -42,6 +44,21 @@ export async function getMarketplaceListings(options?: {
     .innerJoin(users, eq(listings.sellerId, users.id))
     .where(and(...conditions))
     .orderBy(desc(listings.createdAt));
+
+  const totalQuery = db
+    .select({ count: count() })
+    .from(listings)
+    .where(and(...conditions));
+
+  const [totalRows] = await Promise.all([totalQuery]);
+  const items = options?.limit
+    ? await baseQuery.limit(options.limit).offset(options.offset ?? 0)
+    : await baseQuery;
+
+  return {
+    items,
+    total: totalRows[0]?.count ?? 0,
+  };
 }
 
 export async function getListingById(id: string) {

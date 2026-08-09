@@ -1,6 +1,4 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { ReactElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { Resend } from "resend";
 import { db } from "@/db";
 import { notifications, type DbNotification } from "@/db/schema";
@@ -15,6 +13,10 @@ function getResend() {
   const key = process.env.RESEND_API_KEY;
   if (!key) return null;
   return new Resend(key);
+}
+
+function isTestEmailMode() {
+  return process.env.E2E_TEST_MODE === "true";
 }
 
 function getNotificationHref(notification: DbNotification) {
@@ -153,8 +155,19 @@ export async function getNavbarNotifications(userId: string) {
 export async function sendEmailNotification(params: {
   to: string;
   subject: string;
-  element: ReactElement;
+  html: string;
 }) {
+  if (isTestEmailMode()) {
+    globalThis.__E2E_EMAIL_EVENTS__ ??= [];
+    globalThis.__E2E_EMAIL_EVENTS__.push({
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+      createdAt: new Date().toISOString(),
+    });
+    return;
+  }
+
   const resend = getResend();
   if (!resend) return;
 
@@ -163,7 +176,7 @@ export async function sendEmailNotification(params: {
       from: `${APP_NAME} <onboarding@resend.dev>`,
       to: params.to,
       subject: params.subject,
-      html: renderToStaticMarkup(params.element),
+      html: params.html,
     });
   } catch (error) {
     console.error("Failed to send email notification:", error);

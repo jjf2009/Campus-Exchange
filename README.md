@@ -11,6 +11,7 @@ No online payments — students list items, request them, and connect on WhatsAp
 - **Supabase** Auth (Google OAuth) + Storage
 - **PostgreSQL** via **Drizzle ORM**
 - **Resend** (optional email notifications)
+- **Playwright** for end-to-end testing
 - Deploy: **Vercel**
 
 ## Features (MVP)
@@ -73,6 +74,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `DATABASE_URL` | Postgres connection string |
 | `NEXT_PUBLIC_APP_URL` | App origin (`http://localhost:3000`) |
 | `RESEND_API_KEY` | Optional — emails for accept/reject |
+| `E2E_TEST_MODE` | Enables test-only login + mock email transport |
 
 ## Scripts
 
@@ -84,7 +86,16 @@ npm run db:push      # sync Drizzle schema
 npm run db:generate  # generate migrations
 npm run db:seed      # seed demo listings
 npm run db:studio    # Drizzle Studio
+npm run test:e2e     # Playwright end-to-end tests
 ```
+
+### End-to-end testing
+
+Set `E2E_TEST_MODE=true` when running the Playwright suite. In that mode:
+
+- a test-only login route can set a session cookie for seeded demo users
+- email notifications are captured locally instead of calling Resend
+- request, listing, notification, and acceptance flows can be exercised safely
 
 ## Project structure
 

@@ -7,14 +7,14 @@ import {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const { id } = params;
+  const { id } = await params;
   const notification = await getNotificationById(id, user.id);
 
   if (!notification) {

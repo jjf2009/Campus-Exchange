@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   integer,
+  boolean,
   timestamp,
   pgEnum,
   index,
@@ -111,7 +112,7 @@ export const notifications = pgTable(
     title: text("title").notNull(),
     message: text("message").notNull(),
     data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
-    isRead: integer("is_read", { mode: "boolean" }).notNull().default(false),
+    isRead: boolean("is_read").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

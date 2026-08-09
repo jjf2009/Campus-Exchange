@@ -14,6 +14,8 @@ import { requireCompleteProfile } from "@/lib/auth";
 import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 import type { Category, Condition } from "@/types";
 
+const ITEMS_PER_PAGE = 8;
+
 export const metadata = {
   title: "Marketplace",
 };
@@ -21,11 +23,12 @@ export const metadata = {
 export default async function MarketplacePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; page?: string }>;
 }) {
   const user = await requireCompleteProfile();
   const params = await searchParams;
   const notifications = await getNavbarNotifications(user.id);
+  const currentPage = Math.max(1, Number(params.page ?? "1") || 1);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -60,7 +63,11 @@ export default async function MarketplacePage({
         </div>
 
         <Suspense fallback={<ListingGridSkeleton />}>
-          <MarketplaceGrid search={params.q} category={params.category} />
+          <MarketplaceGrid
+            search={params.q}
+            category={params.category}
+            page={currentPage}
+          />
         </Suspense>
       </main>
       <Footer />
@@ -71,11 +78,21 @@ export default async function MarketplacePage({
 async function MarketplaceGrid({
   search,
   category,
+  page,
 }: {
   search?: string;
   category?: string;
+  page: number;
 }) {
-  const items = await getMarketplaceListings({ search, category });
+  const { total } = await getMarketplaceListings({ search, category });
+  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+  const pageNumber = Math.min(page, totalPages);
+  const { items } = await getMarketplaceListings({
+    search,
+    category,
+    limit: ITEMS_PER_PAGE,
+    offset: (pageNumber - 1) * ITEMS_PER_PAGE,
+  });
 
   if (items.length === 0) {
     return (
@@ -95,21 +112,58 @@ async function MarketplaceGrid({
     );
   }
 
+  const createPageHref = (nextPage: number) => {
+    const params = new URLSearchParams();
+    if (search?.trim()) params.set("q", search.trim());
+    if (category) params.set("category", category);
+    if (nextPage > 1) params.set("page", String(nextPage));
+    return `/marketplace${params.toString() ? `?${params.toString()}` : ""}`;
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {items.map((item) => (
-        <ListingCard
-          key={item.id}
-          id={item.id}
-          title={item.title}
-          price={item.price}
-          category={item.category as Category}
-          condition={item.condition as Condition}
-          imageUrl={item.imageUrl}
-          sellerName={item.sellerName}
-          createdAt={item.createdAt}
-        />
-      ))}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((item) => (
+          <ListingCard
+            key={item.id}
+            id={item.id}
+            title={item.title}
+            price={item.price}
+            category={item.category as Category}
+            condition={item.condition as Condition}
+            imageUrl={item.imageUrl}
+            sellerName={item.sellerName}
+            createdAt={item.createdAt}
+          />
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border bg-background px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            Page {pageNumber} of {totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              render={<Link href={createPageHref(pageNumber - 1)} />}
+              nativeButton={false}
+              variant="outline"
+              size="sm"
+              disabled={pageNumber <= 1}
+            >
+              Previous
+            </Button>
+            <Button
+              render={<Link href={createPageHref(pageNumber + 1)} />}
+              nativeButton={false}
+              size="sm"
+              disabled={pageNumber >= totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

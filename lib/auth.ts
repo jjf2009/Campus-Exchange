@@ -1,9 +1,11 @@
 import { eq } from "drizzle-orm";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import type { DbUser } from "@/db/schema";
+import { E2E_TEST_COOKIE, isE2ETestMode, parseE2EUserCookie } from "@/lib/e2e";
 
 export async function getSessionUser() {
   const supabase = await createClient();
@@ -14,6 +16,19 @@ export async function getSessionUser() {
 }
 
 export async function getCurrentUser(): Promise<DbUser | null> {
+  if (isE2ETestMode()) {
+    const cookieStore = await cookies();
+    const email = parseE2EUserCookie(cookieStore.get(E2E_TEST_COOKIE)?.value);
+    if (email) {
+      const [testUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+      return testUser ?? null;
+    }
+  }
+
   const authUser = await getSessionUser();
   if (!authUser?.email) return null;
 
