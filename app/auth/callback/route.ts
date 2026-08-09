@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isProfileComplete } from "@/lib/auth";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/marketplace";
+  const appUrl = getAppUrl();
 
   if (code) {
     const supabase = await createClient();
@@ -16,12 +18,12 @@ export async function GET(request: Request) {
       const user = await getCurrentUser();
 
       if (user && !isProfileComplete(user)) {
-        return NextResponse.redirect(`${origin}/profile/setup`);
+        return NextResponse.redirect(`${appUrl}/profile/setup`);
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${appUrl}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  return NextResponse.redirect(`${appUrl}/login?error=auth`);
 }
