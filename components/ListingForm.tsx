@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Package, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { createListing, updateListing } from "@/actions/listings";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CATEGORIES, CONDITIONS, MAX_IMAGE_SIZE } from "@/lib/constants";
-import { listingSchema, validateImageFile } from "@/lib/validations";
+import { CATEGORIES, CONDITIONS, getCategoryImage } from "@/lib/constants";
+import { listingSchema } from "@/lib/validations";
 import type { DbListing } from "@/db/schema";
 
 interface ListingFormProps {
@@ -26,43 +27,14 @@ interface ListingFormProps {
   listing?: DbListing;
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) {
-    return `${Math.round(bytes / 1024)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 export function ListingForm({ mode, listing }: ListingFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [category, setCategory] = useState(listing?.category ?? "");
   const [condition, setCondition] = useState(listing?.condition ?? "");
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [imageError, setImageError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
-  function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    setImageError(null);
-
-    if (!file) {
-      setFileName(null);
-      return;
-    }
-
-    const result = validateImageFile(file);
-    if (!result.ok) {
-      setFileName(null);
-      setImageError(result.error);
-      toast.error(result.error);
-      // Clear the input so a bad file cannot be submitted.
-      event.target.value = "";
-      return;
-    }
-
-    setFileName(`${file.name} (${formatBytes(file.size)})`);
-  }
+  const previewImage = category ? getCategoryImage(category) : null;
 
   function handleSubmit(formData: FormData) {
     setFieldError(null);
@@ -103,16 +75,6 @@ export function ListingForm({ mode, listing }: ListingFormProps) {
       return;
     }
 
-    const image = formData.get("image");
-    if (image instanceof File && image.size > 0) {
-      const imageCheck = validateImageFile(image);
-      if (!imageCheck.ok) {
-        setImageError(imageCheck.error);
-        toast.error(imageCheck.error);
-        return;
-      }
-    }
-
     startTransition(async () => {
       try {
         const result =
@@ -137,9 +99,7 @@ export function ListingForm({ mode, listing }: ListingFormProps) {
         }
       } catch (error) {
         console.error("ListingForm submit error:", error);
-        toast.error(
-          "Could not save listing. If you attached a photo, try a smaller image (under 5 MB)."
-        );
+        toast.error("Could not save listing. Please try again.");
       }
     });
   }
@@ -228,30 +188,28 @@ export function ListingForm({ mode, listing }: ListingFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="image">Photo {mode === "edit" ? "(optional)" : ""}</Label>
-          <div className="relative">
-            <Input
-              id="image"
-              name="image"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="cursor-pointer"
-              onChange={handleImageChange}
-            />
+          <Label>Photo</Label>
+          <div className="relative aspect-[4/3] overflow-hidden rounded-xl border bg-muted">
+            {previewImage ? (
+              <Image
+                src={previewImage}
+                alt={category ? `${category} preview` : "Category preview"}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, 300px"
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
+                <Package className="h-10 w-10 opacity-40" />
+                <p className="text-xs">
+                  Select a category to see its photo
+                </p>
+              </div>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
-            JPEG, PNG or WEBP up to {formatBytes(MAX_IMAGE_SIZE)}. Large images
-            are blocked before upload so the app does not crash.
-            {fileName ? ` Selected: ${fileName}` : null}
-            {mode === "edit" && listing?.imageUrl && !fileName
-              ? " Current image will be kept if you skip this."
-              : null}
+            Photos are fixed per category. Upload is not required.
           </p>
-          {imageError ? (
-            <p className="text-xs text-destructive" role="alert">
-              {imageError}
-            </p>
-          ) : null}
         </div>
       </div>
 
@@ -266,7 +224,15 @@ export function ListingForm({ mode, listing }: ListingFormProps) {
           type="button"
           variant="outline"
           disabled={isPending}
-          render={<Link href={mode === "edit" && listing ? `/listing/${listing.id}` : "/marketplace"} />}
+          render={
+            <Link
+              href={
+                mode === "edit" && listing
+                  ? `/listing/${listing.id}`
+                  : "/marketplace"
+              }
+            />
+          }
           nativeButton={false}
         >
           Cancel

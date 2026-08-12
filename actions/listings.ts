@@ -6,8 +6,8 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { listings, purchaseRequests } from "@/db/schema";
 import { requireCompleteProfile } from "@/lib/auth";
+import { getCategoryImage } from "@/lib/constants";
 import { createNotification } from "@/lib/notifications/notification-service";
-import { uploadListingImage } from "@/lib/storage";
 import { listingSchema } from "@/lib/validations";
 import type { ActionResult } from "@/types";
 
@@ -32,16 +32,7 @@ export async function createListing(
       };
     }
 
-    let imageUrl: string | null = null;
-    const image = formData.get("image");
-
-    if (image instanceof File && image.size > 0) {
-      const upload = await uploadListingImage(image, user.id);
-      if ("error" in upload) {
-        return { success: false, error: upload.error };
-      }
-      imageUrl = upload.url;
-    }
+    const imageUrl = getCategoryImage(parsed.data.category);
 
     const [created] = await db
       .insert(listings)
@@ -116,16 +107,8 @@ export async function updateListing(formData: FormData): Promise<ActionResult> {
       };
     }
 
-    let imageUrl = existing.imageUrl;
-    const image = formData.get("image");
-
-    if (image instanceof File && image.size > 0) {
-      const upload = await uploadListingImage(image, user.id);
-      if ("error" in upload) {
-        return { success: false, error: upload.error };
-      }
-      imageUrl = upload.url;
-    }
+    // Image always follows the selected category (no user uploads).
+    const imageUrl = getCategoryImage(parsed.data.category);
 
     await db
       .update(listings)

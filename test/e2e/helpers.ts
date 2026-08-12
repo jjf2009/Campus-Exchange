@@ -57,7 +57,7 @@ export async function seedE2EListing() {
       price: 750,
       category: "Boiler",
       condition: "Good",
-      imageUrl: null,
+      imageUrl: "/Boiler_suit.jpg",
       status: "AVAILABLE",
     })
     .returning();

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Package, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { ListingActions } from "@/components/ListingActions";
 import { ListingStatusBadge } from "@/components/StatusBadge";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getListingsBySeller } from "@/db/queries/listings";
 import { requireCompleteProfile } from "@/lib/auth";
+import { getCategoryImage } from "@/lib/constants";
 import { formatPrice } from "@/utils/formatPrice";
 import type { ListingStatus } from "@/types";
 
@@ -49,19 +50,17 @@ export default async function MyListingsPage() {
           <Card key={item.id}>
             <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
               <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-lg bg-muted sm:w-24">
-                {item.imageUrl ? (
-                  <Image
-                    src={item.imageUrl}
-                    alt={item.title}
-                    fill
-                    className="object-cover"
-                    sizes="96px"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-muted-foreground">
-                    <Package className="h-8 w-8 opacity-40" />
-                  </div>
-                )}
+                <Image
+                  src={
+                    item.imageUrl?.startsWith("/")
+                      ? item.imageUrl
+                      : getCategoryImage(item.category)
+                  }
+                  alt={item.title}
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                />
               </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">

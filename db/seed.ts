@@ -2,6 +2,7 @@ import "dotenv/config";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { listings, users } from "./schema";
+import { getCategoryImage } from "../lib/constants";
 
 async function seed() {
   const connectionString = process.env.DATABASE_URL;
@@ -78,7 +79,7 @@ async function seed() {
       price: 850,
       category: "Boiler",
       condition: "Good",
-      imageUrl: null,
+      imageUrl: getCategoryImage("Boiler"),
       status: "AVAILABLE",
     },
     {
@@ -87,9 +88,9 @@ async function seed() {
       description:
         "Complete mini drafter set. Scales are clean and screws work fine.",
       price: 450,
-      category: "Mini Drafter",
+      category: "Drafter",
       condition: "Like New",
-      imageUrl: null,
+      imageUrl: getCategoryImage("Drafter"),
       status: "AVAILABLE",
     },
     {
@@ -100,40 +101,39 @@ async function seed() {
       price: 600,
       category: "Calculator",
       condition: "Good",
-      imageUrl: null,
+      imageUrl: getCategoryImage("Calculator"),
       status: "AVAILABLE",
     },
     {
       sellerId: priya.id,
-      title: "Strength of Materials Textbook",
+      title: "Bomber Jacket - Medium",
       description:
-        "R S Khurmi SOM textbook. Highlighted notes for GEC syllabus included.",
-      price: 250,
-      category: "Books",
-      condition: "Fair",
-      imageUrl: null,
+        "Warm bomber jacket, lightly used. Great for hostel winters.",
+      price: 700,
+      category: "Bomber",
+      condition: "Good",
+      imageUrl: getCategoryImage("Bomber"),
       status: "AVAILABLE",
     },
     {
       sellerId: arjun?.id ?? priya.id,
-      title: "Hostel Study Chair",
+      title: "Hostel Mattress",
       description:
-        "Comfortable plastic study chair. Moving out of hostel, must sell this week.",
+        "Clean single mattress. Moving out of hostel, must sell this week.",
       price: 400,
-      category: "Chair",
+      category: "Mattress",
       condition: "Good",
-      imageUrl: null,
+      imageUrl: getCategoryImage("Mattress"),
       status: "AVAILABLE",
     },
     {
       sellerId: arjun?.id ?? rahul.id,
-      title: "Drawing Kit Complete Set",
-      description:
-        "Compass, divider, set squares, protractor — full engineering drawing kit.",
+      title: "Table Fan",
+      description: "Quiet table fan, works perfectly. Cord is intact.",
       price: 300,
-      category: "Drawing Kit",
+      category: "Fan",
       condition: "Like New",
-      imageUrl: null,
+      imageUrl: getCategoryImage("Fan"),
       status: "AVAILABLE",
     },
   ]);

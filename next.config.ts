@@ -13,10 +13,9 @@ function supabaseHostname(): string | null {
 const supabaseHost = supabaseHostname();
 
 const nextConfig: NextConfig = {
-  // Listing images can be up to 5 MB; form payload needs a bit of headroom
   experimental: {
     serverActions: {
-      bodySizeLimit: "6mb",
+      bodySizeLimit: "1mb",
     },
   },
   images: {

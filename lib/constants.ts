@@ -1,14 +1,8 @@
 import type { Branch, Category, Condition, Year } from "@/types";
 
 export const APP_NAME = "GEC Exchange";
-export const APP_DESCRIPTION ="Campus marketplace for Goa College of Engineering students to buy and sell used academic equipment.";
-
-export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
-export const ALLOWED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-] as const;
+export const APP_DESCRIPTION =
+  "Campus marketplace for Goa College of Engineering students to buy and sell used academic equipment.";
 
 export const DEFAULT_PAGE_SIZE = 20;
 
@@ -53,8 +47,28 @@ export const CATEGORIES: Category[] = [
 export const CATEGORY_GROUPS = {
   Academic: ["Boiler", "Bomber", "Drafter"] as Category[],
   Electronics: ["Calculator"] as Category[],
-  Hostel: ["Mattress", "Cooler","Fan", "Induction"] as Category[],
+  Hostel: ["Mattress", "Cooler", "Fan", "Induction"] as Category[],
   Others: ["Others"] as Category[],
 } as const;
+
+/** Static images in /public — one per category (no user uploads). */
+export const CATEGORY_IMAGES: Record<Category, string> = {
+  Boiler: "/Boiler_suit.jpg",
+  Bomber: "/bomber.jpg",
+  Drafter: "/drafter.jpg",
+  Calculator: "/calculator.jpg",
+  Mattress: "/mattress.jpg",
+  Cooler: "/cooler.jpg",
+  Fan: "/fan.jpg",
+  Induction: "/induction.jpg",
+  Others: "/other.png",
+};
+
+export function getCategoryImage(category: string | null | undefined): string {
+  if (category && category in CATEGORY_IMAGES) {
+    return CATEGORY_IMAGES[category as Category];
+  }
+  return CATEGORY_IMAGES.Others;
+}
 
 export const LISTING_IMAGE_BUCKET = "listing-images";

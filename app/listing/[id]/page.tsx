@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { ListingActions } from "@/components/ListingActions";
 import { Navbar } from "@/components/Navbar";
@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { getListingById } from "@/db/queries/listings";
 import { getRequestForListing } from "@/db/queries/requests";
 import { requireCompleteProfile } from "@/lib/auth";
+import { getCategoryImage } from "@/lib/constants";
 import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 import { formatFullDate, formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
@@ -55,6 +56,11 @@ export default async function ListingDetailPage({
   if (listing.status === "PENDING_APPROVAL")
     disabledReason = "Seller is finalizing with another buyer.";
 
+  const displayImage =
+    listing.imageUrl && listing.imageUrl.startsWith("/")
+      ? listing.imageUrl
+      : getCategoryImage(listing.category);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar user={user} notifications={notifications} />
@@ -72,20 +78,14 @@ export default async function ListingDetailPage({
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="relative aspect-square overflow-hidden rounded-2xl border bg-muted">
-            {listing.imageUrl ? (
-              <SafeImage
-                src={listing.imageUrl}
-                alt={listing.title}
-                className="object-cover"
-                priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                iconClassName="h-20 w-20 opacity-30"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-muted-foreground">
-                <Package className="h-20 w-20 opacity-30" />
-              </div>
-            )}
+            <SafeImage
+              src={displayImage}
+              alt={listing.title}
+              className="object-cover"
+              priority
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              iconClassName="h-20 w-20 opacity-30"
+            />
           </div>
 
           <div className="space-y-6">

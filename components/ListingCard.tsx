@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Package } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { getCategoryImage } from "@/lib/constants";
 import { formatPrice } from "@/utils/formatPrice";
 import { formatRelativeDate } from "@/utils/formatDate";
 
@@ -12,7 +12,7 @@ interface ListingCardProps {
   price: number;
   category: string;
   condition: string;
-  imageUrl: string | null;
+  imageUrl?: string | null;
   sellerName?: string;
   createdAt: Date | string;
 }
@@ -27,22 +27,21 @@ export function ListingCard({
   sellerName,
   createdAt,
 }: ListingCardProps) {
+  const displayImage =
+    imageUrl && imageUrl.startsWith("/")
+      ? imageUrl
+      : getCategoryImage(category);
+
   return (
     <Link href={`/listing/${id}`} className="group block h-full">
       <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
         <div className="relative aspect-[4/3] bg-muted">
-          {imageUrl ? (
-            <SafeImage
-              src={imageUrl}
-              alt={title}
-              className="object-cover transition-transform group-hover:scale-[1.02]"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-              <Package className="h-12 w-12 opacity-40" />
-            </div>
-          )}
+          <SafeImage
+            src={displayImage}
+            alt={title}
+            className="object-cover transition-transform group-hover:scale-[1.02]"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          />
         </div>
         <CardContent className="space-y-2 p-4">
           <div className="flex items-start justify-between gap-2">

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ExternalLink, MessageCircle, Package } from "lucide-react";
+import { ExternalLink, MessageCircle } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { RequestActions } from "@/components/RequestActions";
 import { RequestStatusBadge } from "@/components/StatusBadge";
@@ -12,9 +12,14 @@ import {
   getIncomingRequests,
 } from "@/db/queries/requests";
 import { requireCompleteProfile } from "@/lib/auth";
+import { getCategoryImage } from "@/lib/constants";
 import { formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
 import type { RequestStatus } from "@/types";
+
+function listingThumb(imageUrl: string | null, category: string) {
+  return imageUrl?.startsWith("/") ? imageUrl : getCategoryImage(category);
+}
 
 export const metadata = {
   title: "Requests",
@@ -47,19 +52,16 @@ export default async function RequestsPage() {
             <Card key={request.id}>
               <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
-                  {request.listingImageUrl ? (
-                    <Image
-                      src={request.listingImageUrl}
-                      alt={request.listingTitle}
-                      fill
-                      className="object-cover"
-                      sizes="64px"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <Package className="h-6 w-6 opacity-40" />
-                    </div>
-                  )}
+                  <Image
+                    src={listingThumb(
+                      request.listingImageUrl,
+                      request.listingCategory
+                    )}
+                    alt={request.listingTitle}
+                    fill
+                    className="object-cover"
+                    sizes="64px"
+                  />
                 </div>
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">

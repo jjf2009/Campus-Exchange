@@ -1,12 +1,5 @@
 import { z } from "zod";
-import {
-  ALLOWED_IMAGE_TYPES,
-  BRANCHES,
-  CATEGORIES,
-  CONDITIONS,
-  MAX_IMAGE_SIZE,
-  YEARS,
-} from "@/lib/constants";
+import { BRANCHES, CATEGORIES, CONDITIONS, YEARS } from "@/lib/constants";
 
 /** Digits-only Indian mobile number (exactly 10). */
 export const PHONE_REGEX = /^\d{10}$/;
@@ -67,43 +60,6 @@ export const updateListingSchema = listingSchema.partial().extend({
 export const requestSchema = z.object({
   listingId: z.string().uuid("Invalid listing id"),
 });
-
-export function validateImageFile(
-  file: File
-): { ok: true } | { ok: false; error: string } {
-  if (!(file instanceof File) || file.size <= 0) {
-    return { ok: false, error: "Please choose an image file" };
-  }
-
-  if (file.size > MAX_IMAGE_SIZE) {
-    return { ok: false, error: "Image must be under 5 MB" };
-  }
-
-  if (
-    !ALLOWED_IMAGE_TYPES.includes(
-      file.type as (typeof ALLOWED_IMAGE_TYPES)[number]
-    )
-  ) {
-    return {
-      ok: false,
-      error: "Only JPEG, PNG, and WEBP images are allowed",
-    };
-  }
-
-  return { ok: true };
-}
-
-export const imageFileSchema = z
-  .instanceof(File, { error: "Please choose an image file" })
-  .superRefine((file, ctx) => {
-    const result = validateImageFile(file);
-    if (!result.ok) {
-      ctx.addIssue({
-        code: "custom",
-        message: result.error,
-      });
-    }
-  });
 
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type ListingInput = z.infer<typeof listingSchema>;
