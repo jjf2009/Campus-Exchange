@@ -10,6 +10,7 @@ import {
   sendRequestAcceptedEmail,
   sendRequestRejectedEmail,
 } from "@/lib/email";
+import { requestSchema } from "@/lib/validations";
 import type { ActionResult } from "@/types";
 
 export async function createRequest(
@@ -17,6 +18,14 @@ export async function createRequest(
 ): Promise<ActionResult<{ id: string }>> {
   try {
     const user = await requireCompleteProfile();
+
+    const idCheck = requestSchema.safeParse({ listingId });
+    if (!idCheck.success) {
+      return {
+        success: false,
+        error: idCheck.error.issues[0]?.message ?? "Invalid listing id",
+      };
+    }
 
     const [listing] = await db
       .select()
@@ -63,6 +72,13 @@ export async function createRequest(
       })
       .returning({ id: purchaseRequests.id });
 
+    if (!created?.id) {
+      return {
+        success: false,
+        error: "Failed to create request. Please try again.",
+      };
+    }
+
     await createNotification({
       userId: listing.sellerId,
       type: "NEW_REQUEST",
@@ -93,6 +109,10 @@ export async function createRequest(
 export async function acceptRequest(requestId: string): Promise<ActionResult> {
   try {
     const user = await requireCompleteProfile();
+
+    if (!requestId || typeof requestId !== "string") {
+      return { success: false, error: "Invalid request id" };
+    }
 
     const [request] = await db
       .select({
@@ -239,6 +259,10 @@ export async function acceptRequest(requestId: string): Promise<ActionResult> {
 export async function rejectRequest(requestId: string): Promise<ActionResult> {
   try {
     const user = await requireCompleteProfile();
+
+    if (!requestId || typeof requestId !== "string") {
+      return { success: false, error: "Invalid request id" };
+    }
 
     const [request] = await db
       .select({

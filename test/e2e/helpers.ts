@@ -13,7 +13,7 @@ export async function resetE2EDatabase() {
       name: "Demo Seller",
       branch: "Mechanical",
       year: "Final Year",
-      phone: "+919800000001",
+      phone: "9800000001",
       avatarUrl: null,
     },
     {
@@ -21,7 +21,7 @@ export async function resetE2EDatabase() {
       name: "Buyer One",
       branch: "Computer",
       year: "Third Year",
-      phone: "+919800000002",
+      phone: "9800000002",
       avatarUrl: null,
     },
     {
@@ -29,7 +29,7 @@ export async function resetE2EDatabase() {
       name: "Buyer Two",
       branch: "Civil",
       year: "Second Year",
-      phone: "+919800000003",
+      phone: "9800000003",
       avatarUrl: null,
     },
   ]);

@@ -30,23 +30,12 @@ export type Category =
   | "Boiler"
   | "Bomber"
   | "Drafter"
-  | "Mini Drafter"
-  | "Drawing Kit"
-  | "Books"
-  | "Laptop"
   | "Calculator"
-  | "Monitor"
-  | "Keyboard"
-  | "Mouse"
-  | "Chair"
   | "Mattress"
-  | "Bucket"
-  | "Table"
   | "Cooler"
   | "Fan"
   | "Induction"
   | "Others";
-
 export interface User {
   id: string;
   email: string;

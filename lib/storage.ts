@@ -1,6 +1,7 @@
 import sharp from "sharp";
-import { LISTING_IMAGE_BUCKET, MAX_IMAGE_SIZE } from "@/lib/constants";
+import { LISTING_IMAGE_BUCKET } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { validateImageFile } from "@/lib/validations";
 
 const MAX_DIMENSION = 1280;
 const WEBP_QUALITY = 78;
@@ -32,12 +33,9 @@ export async function uploadListingImage(
   file: File,
   userId: string
 ): Promise<{ url: string } | { error: string }> {
-  if (file.size > MAX_IMAGE_SIZE) {
-    return { error: "Image must be under 5 MB" };
-  }
-
-  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-    return { error: "Only JPEG, PNG, and WEBP images are allowed" };
+  const validation = validateImageFile(file);
+  if (!validation.ok) {
+    return { error: validation.error };
   }
 
   try {
@@ -51,10 +49,12 @@ export async function uploadListingImage(
       contentType = compressed.contentType;
       ext = compressed.ext;
     } catch (compressError) {
-      console.error("Image compress failed, uploading original:", compressError);
-      buffer = Buffer.from(await file.arrayBuffer());
-      contentType = file.type;
-      ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      // Do not upload unprocessed originals — corrupt or exotic files can crash later.
+      console.error("Image compress failed:", compressError);
+      return {
+        error:
+          "Could not process this image. Please use a different JPEG, PNG, or WEBP under 5 MB.",
+      };
     }
 
     const supabase = createAdminClient();
@@ -97,7 +97,10 @@ export async function uploadListingImage(
     console.error("Image upload unexpected error:", error);
     const message = error instanceof Error ? error.message : "";
 
-    if (message.includes("SUPABASE_SERVICE_ROLE_KEY") || message.includes("placeholder")) {
+    if (
+      message.includes("SUPABASE_SERVICE_ROLE_KEY") ||
+      message.includes("placeholder")
+    ) {
       return {
         error:
           "Supabase service role key is missing. Add SUPABASE_SERVICE_ROLE_KEY to .env.local from Project Settings → API.",

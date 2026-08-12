@@ -6,6 +6,8 @@ import { users } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import type { DbUser } from "@/db/schema";
 import { E2E_TEST_COOKIE, isE2ETestMode, parseE2EUserCookie } from "@/lib/e2e";
+import { BRANCHES, YEARS } from "@/lib/constants";
+import { isValidPhone } from "@/lib/validations";
 
 export async function getSessionUser() {
   const supabase = await createClient();
@@ -17,15 +19,20 @@ export async function getSessionUser() {
 
 export async function getCurrentUser(): Promise<DbUser | null> {
   if (isE2ETestMode()) {
-    const cookieStore = await cookies();
-    const email = parseE2EUserCookie(cookieStore.get(E2E_TEST_COOKIE)?.value);
-    if (email) {
-      const [testUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
-      return testUser ?? null;
+    try {
+      const cookieStore = await cookies();
+      const email = parseE2EUserCookie(cookieStore.get(E2E_TEST_COOKIE)?.value);
+      if (email) {
+        const [testUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+        return testUser ?? null;
+      }
+    } catch (error) {
+      console.error("getCurrentUser e2e error:", error);
+      return null;
     }
   }
 
@@ -87,12 +94,18 @@ export async function requireUser(): Promise<DbUser> {
 
 export async function requireCompleteProfile(): Promise<DbUser> {
   const user = await requireUser();
-  if (!user.branch || !user.year || !user.phone) {
+  if (!isProfileComplete(user)) {
     redirect("/profile/setup");
   }
   return user;
 }
 
 export function isProfileComplete(user: DbUser): boolean {
-  return Boolean(user.branch && user.year && user.phone);
+  const hasBranch =
+    Boolean(user.branch) &&
+    (BRANCHES as readonly string[]).includes(user.branch as string);
+  const hasYear =
+    Boolean(user.year) &&
+    (YEARS as readonly string[]).includes(user.year as string);
+  return hasBranch && hasYear && isValidPhone(user.phone);
 }

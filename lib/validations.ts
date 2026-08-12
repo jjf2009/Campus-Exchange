@@ -1,11 +1,24 @@
 import { z } from "zod";
 import {
+  ALLOWED_IMAGE_TYPES,
   BRANCHES,
   CATEGORIES,
   CONDITIONS,
   MAX_IMAGE_SIZE,
   YEARS,
 } from "@/lib/constants";
+
+/** Digits-only Indian mobile number (exactly 10). */
+export const PHONE_REGEX = /^\d{10}$/;
+
+export function normalizePhone(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.replace(/\D/g, "");
+}
+
+export function isValidPhone(phone: string | null | undefined): boolean {
+  return Boolean(phone && PHONE_REGEX.test(phone));
+}
 
 export const profileSchema = z.object({
   branch: z.enum(BRANCHES as [string, ...string[]], {
@@ -14,24 +27,28 @@ export const profileSchema = z.object({
   year: z.enum(YEARS as [string, ...string[]], {
     error: "Please select your year",
   }),
-  phone: z
-    .string()
-    .min(10, "Phone number must be at least 10 digits")
-    .max(15, "Phone number is too long")
-    .regex(/^[+]?[\d\s-]+$/, "Enter a valid phone number"),
+  phone: z.preprocess(
+    (value) => normalizePhone(value),
+    z
+      .string()
+      .length(10, "Phone number must be exactly 10 digits")
+      .regex(PHONE_REGEX, "Phone number must be exactly 10 digits")
+  ),
 });
 
 export const listingSchema = z.object({
   title: z
     .string()
+    .trim()
     .min(3, "Title must be at least 3 characters")
     .max(100, "Title must be under 100 characters"),
   description: z
     .string()
+    .trim()
     .min(10, "Description must be at least 10 characters")
     .max(2000, "Description must be under 2000 characters"),
   price: z.coerce
-    .number()
+    .number({ error: "Enter a valid price" })
     .int("Price must be a whole number")
     .min(1, "Price must be at least ₹1")
     .max(500000, "Price is too high"),
@@ -44,21 +61,49 @@ export const listingSchema = z.object({
 });
 
 export const updateListingSchema = listingSchema.partial().extend({
-  id: z.string().uuid(),
+  id: z.string().uuid("Invalid listing id"),
 });
 
 export const requestSchema = z.object({
-  listingId: z.string().uuid(),
+  listingId: z.string().uuid("Invalid listing id"),
 });
 
+export function validateImageFile(
+  file: File
+): { ok: true } | { ok: false; error: string } {
+  if (!(file instanceof File) || file.size <= 0) {
+    return { ok: false, error: "Please choose an image file" };
+  }
+
+  if (file.size > MAX_IMAGE_SIZE) {
+    return { ok: false, error: "Image must be under 5 MB" };
+  }
+
+  if (
+    !ALLOWED_IMAGE_TYPES.includes(
+      file.type as (typeof ALLOWED_IMAGE_TYPES)[number]
+    )
+  ) {
+    return {
+      ok: false,
+      error: "Only JPEG, PNG, and WEBP images are allowed",
+    };
+  }
+
+  return { ok: true };
+}
+
 export const imageFileSchema = z
-  .instanceof(File)
-  .refine((file) => file.size <= MAX_IMAGE_SIZE, "Image must be under 5 MB")
-  .refine(
-    (file) =>
-      ["image/jpeg", "image/png", "image/webp"].includes(file.type),
-    "Only JPEG, PNG, and WEBP images are allowed"
-  );
+  .instanceof(File, { error: "Please choose an image file" })
+  .superRefine((file, ctx) => {
+    const result = validateImageFile(file);
+    if (!result.ok) {
+      ctx.addIssue({
+        code: "custom",
+        message: result.error,
+      });
+    }
+  });
 
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type ListingInput = z.infer<typeof listingSchema>;

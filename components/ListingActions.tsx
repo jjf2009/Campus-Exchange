@@ -21,12 +21,17 @@ export function ListingActions({ listingId, status }: ListingActionsProps) {
   function handleDelete() {
     if (!confirm("Remove this listing from the marketplace?")) return;
     startTransition(async () => {
-      const result = await deleteListing(listingId);
-      if (result.success) {
-        toast.success("Listing removed");
-        router.refresh();
-      } else {
-        toast.error(result.error ?? "Failed to delete");
+      try {
+        const result = await deleteListing(listingId);
+        if (result.success) {
+          toast.success("Listing removed");
+          router.refresh();
+        } else {
+          toast.error(result.error ?? "Failed to delete");
+        }
+      } catch (error) {
+        console.error("deleteListing client error:", error);
+        toast.error("Failed to delete. Please try again.");
       }
     });
   }
@@ -35,12 +40,17 @@ export function ListingActions({ listingId, status }: ListingActionsProps) {
     if (!confirm("Mark this item as sold? It will leave the marketplace."))
       return;
     startTransition(async () => {
-      const result = await markListingSold(listingId);
-      if (result.success) {
-        toast.success("Marked as sold");
-        router.refresh();
-      } else {
-        toast.error(result.error ?? "Failed to update");
+      try {
+        const result = await markListingSold(listingId);
+        if (result.success) {
+          toast.success("Marked as sold");
+          router.refresh();
+        } else {
+          toast.error(result.error ?? "Failed to update");
+        }
+      } catch (error) {
+        console.error("markListingSold client error:", error);
+        toast.error("Failed to update. Please try again.");
       }
     });
   }

@@ -6,22 +6,31 @@ import { getAppUrl } from "@/lib/app-url";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/marketplace";
+  const nextParam = searchParams.get("next") ?? "/marketplace";
+  // Only allow relative in-app paths to prevent open redirects.
+  const next =
+    nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/marketplace";
   const appUrl = getAppUrl();
 
   if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
-      // Ensure user row exists
-      const user = await getCurrentUser();
+      if (!error) {
+        // Ensure user row exists; incomplete profiles must finish setup first.
+        const user = await getCurrentUser();
 
-      if (user && !isProfileComplete(user)) {
-        return NextResponse.redirect(`${appUrl}/profile/setup`);
+        if (user && !isProfileComplete(user)) {
+          return NextResponse.redirect(`${appUrl}/profile/setup`);
+        }
+
+        return NextResponse.redirect(`${appUrl}${next}`);
       }
-
-      return NextResponse.redirect(`${appUrl}${next}`);
+    } catch (error) {
+      console.error("Auth callback error:", error);
     }
   }
 

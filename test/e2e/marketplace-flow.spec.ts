@@ -65,6 +65,8 @@ test("seller can create a listing and two buyers can request it without using em
 
   await page.goto("/dashboard/notifications");
   await expect(page.getByText("Notifications")).toBeVisible();
+  const seller = await getE2EUserByEmail("seller.demo@gec.ac.in");
+  if (!seller) throw new Error("Missing seller");
   expect(await getE2ENotificationCount(seller.id)).toBeGreaterThanOrEqual(2);
 });
 

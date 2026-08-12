@@ -57,6 +57,13 @@ export async function createListing(
       })
       .returning({ id: listings.id });
 
+    if (!created?.id) {
+      return {
+        success: false,
+        error: "Failed to create listing. Please try again.",
+      };
+    }
+
     revalidatePath("/marketplace");
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/listings");
@@ -152,6 +159,10 @@ export async function deleteListing(listingId: string): Promise<ActionResult> {
   try {
     const user = await requireCompleteProfile();
 
+    if (!listingId || typeof listingId !== "string") {
+      return { success: false, error: "Invalid listing id" };
+    }
+
     const [existing] = await db
       .select()
       .from(listings)
@@ -186,6 +197,10 @@ export async function markListingSold(
 ): Promise<ActionResult> {
   try {
     const user = await requireCompleteProfile();
+
+    if (!listingId || typeof listingId !== "string") {
+      return { success: false, error: "Invalid listing id" };
+    }
 
     const [existing] = await db
       .select()

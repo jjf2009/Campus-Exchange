@@ -1,8 +1,7 @@
 import type { Branch, Category, Condition, Year } from "@/types";
 
 export const APP_NAME = "GEC Exchange";
-export const APP_DESCRIPTION =
-  "Campus marketplace for Goa College of Engineering students to buy and sell used academic equipment.";
+export const APP_DESCRIPTION ="Campus marketplace for Goa College of Engineering students to buy and sell used academic equipment.";
 
 export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 export const ALLOWED_IMAGE_TYPES = [
@@ -43,18 +42,8 @@ export const CATEGORIES: Category[] = [
   "Boiler",
   "Bomber",
   "Drafter",
-  "Mini Drafter",
-  "Drawing Kit",
-  "Books",
-  "Laptop",
   "Calculator",
-  "Monitor",
-  "Keyboard",
-  "Mouse",
-  "Chair",
   "Mattress",
-  "Bucket",
-  "Table",
   "Cooler",
   "Fan",
   "Induction",
@@ -62,22 +51,9 @@ export const CATEGORIES: Category[] = [
 ];
 
 export const CATEGORY_GROUPS = {
-  Academic: [
-    "Boiler",
-    "Bomber",
-    "Drafter",
-    "Mini Drafter",
-    "Drawing Kit",
-    "Books",
-  ] as Category[],
-  Electronics: [
-    "Laptop",
-    "Calculator",
-    "Monitor",
-    "Keyboard",
-    "Mouse",
-  ] as Category[],
-  Hostel: ["Chair", "Mattress", "Bucket", "Table"] as Category[],
+  Academic: ["Boiler", "Bomber", "Drafter"] as Category[],
+  Electronics: ["Calculator"] as Category[],
+  Hostel: ["Mattress", "Cooler","Fan", "Induction"] as Category[],
   Others: ["Others"] as Category[],
 } as const;
 

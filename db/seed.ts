@@ -22,7 +22,7 @@ async function seed() {
         name: "Rahul Sharma",
         branch: "Mechanical",
         year: "Final Year",
-        phone: "+919876543210",
+        phone: "9876543210",
         avatarUrl: null,
       },
       {
@@ -30,7 +30,7 @@ async function seed() {
         name: "Priya Naik",
         branch: "Computer",
         year: "Third Year",
-        phone: "+919876543211",
+        phone: "9876543211",
         avatarUrl: null,
       },
       {
@@ -38,7 +38,7 @@ async function seed() {
         name: "Arjun Desai",
         branch: "Electrical",
         year: "Second Year",
-        phone: "+919876543212",
+        phone: "9876543212",
         avatarUrl: null,
       },
     ])

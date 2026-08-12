@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Package } from "lucide-react";
@@ -6,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { ListingActions } from "@/components/ListingActions";
 import { Navbar } from "@/components/Navbar";
 import { RequestButton } from "@/components/RequestButton";
+import { SafeImage } from "@/components/SafeImage";
 import { ListingStatusBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,13 +73,13 @@ export default async function ListingDetailPage({
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="relative aspect-square overflow-hidden rounded-2xl border bg-muted">
             {listing.imageUrl ? (
-              <Image
+              <SafeImage
                 src={listing.imageUrl}
                 alt={listing.title}
-                fill
                 className="object-cover"
                 priority
                 sizes="(max-width: 1024px) 100vw, 50vw"
+                iconClassName="h-20 w-20 opacity-30"
               />
             ) : (
               <div className="flex h-full items-center justify-center text-muted-foreground">

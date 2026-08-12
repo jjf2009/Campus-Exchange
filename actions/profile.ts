@@ -32,7 +32,8 @@ export async function updateProfile(
       .set({
         branch: parsed.data.branch,
         year: parsed.data.year,
-        phone: parsed.data.phone.trim(),
+        // Already normalized to exactly 10 digits by profileSchema.
+        phone: parsed.data.phone,
         updatedAt: new Date(),
       })
       .where(eq(users.id, user.id));

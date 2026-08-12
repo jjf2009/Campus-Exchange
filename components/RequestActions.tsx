@@ -27,12 +27,17 @@ export function RequestActions({ requestId, canAct }: RequestActionsProps) {
       return;
     }
     startTransition(async () => {
-      const result = await acceptRequest(requestId);
-      if (result.success) {
-        toast.success("Request accepted");
-        router.refresh();
-      } else {
-        toast.error(result.error ?? "Failed to accept");
+      try {
+        const result = await acceptRequest(requestId);
+        if (result.success) {
+          toast.success("Request accepted");
+          router.refresh();
+        } else {
+          toast.error(result.error ?? "Failed to accept");
+        }
+      } catch (error) {
+        console.error("acceptRequest client error:", error);
+        toast.error("Failed to accept. Please try again.");
       }
     });
   }
@@ -40,12 +45,17 @@ export function RequestActions({ requestId, canAct }: RequestActionsProps) {
   function handleReject() {
     if (!confirm("Reject this request?")) return;
     startTransition(async () => {
-      const result = await rejectRequest(requestId);
-      if (result.success) {
-        toast.success("Request rejected");
-        router.refresh();
-      } else {
-        toast.error(result.error ?? "Failed to reject");
+      try {
+        const result = await rejectRequest(requestId);
+        if (result.success) {
+          toast.success("Request rejected");
+          router.refresh();
+        } else {
+          toast.error(result.error ?? "Failed to reject");
+        }
+      } catch (error) {
+        console.error("rejectRequest client error:", error);
+        toast.error("Failed to reject. Please try again.");
       }
     });
   }

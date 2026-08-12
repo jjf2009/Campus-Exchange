@@ -57,13 +57,18 @@ export function RequestButton({
 
   function handleRequest() {
     startTransition(async () => {
-      const result = await createRequest(listingId);
-      if (result.success) {
-        toast.success("Request sent. Waiting for seller.");
-        setOpen(false);
-        router.refresh();
-      } else {
-        toast.error(result.error ?? "Could not send request");
+      try {
+        const result = await createRequest(listingId);
+        if (result.success) {
+          toast.success("Request sent. Waiting for seller.");
+          setOpen(false);
+          router.refresh();
+        } else {
+          toast.error(result.error ?? "Could not send request");
+        }
+      } catch (error) {
+        console.error("createRequest client error:", error);
+        toast.error("Could not send request. Please try again.");
       }
     });
   }

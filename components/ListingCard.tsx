@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Package } from "lucide-react";
+import { SafeImage } from "@/components/SafeImage";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPrice } from "@/utils/formatPrice";
@@ -32,10 +32,9 @@ export function ListingCard({
       <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
         <div className="relative aspect-[4/3] bg-muted">
           {imageUrl ? (
-            <Image
+            <SafeImage
               src={imageUrl}
               alt={title}
-              fill
               className="object-cover transition-transform group-hover:scale-[1.02]"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />
