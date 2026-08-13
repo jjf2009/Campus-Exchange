@@ -29,7 +29,7 @@ export default function DashboardError({
         <Button
           size="sm"
           variant="outline"
-          render={<Link href="/marketplace" />}
+          render={<Link href="/" />}
           nativeButton={false}
         >
           Marketplace

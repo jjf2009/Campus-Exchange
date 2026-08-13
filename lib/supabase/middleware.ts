@@ -43,18 +43,43 @@ export async function updateSession(request: NextRequest) {
 
   const publicPaths = ["/", "/login", "/auth/callback", "/api/health"];
   const isPublic =
-    publicPaths.includes(path) || path.startsWith("/auth/");
+    publicPaths.includes(path) ||
+    path.startsWith("/auth/") ||
+    path.startsWith("/listing/");
 
-  if (!user && !isPublic) {
+  if (path === "/marketplace") {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", path);
+    url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  if (!user) {
+    // Clear stale Supabase auth cookies to prevent infinite token refresh error logs
+    request.cookies.getAll().forEach((cookie) => {
+      if (cookie.name.startsWith("sb-")) {
+        request.cookies.delete(cookie.name);
+        supabaseResponse.cookies.delete(cookie.name);
+      }
+    });
+
+    if (!isPublic) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("next", path);
+      
+      const redirectResponse = NextResponse.redirect(url);
+      request.cookies.getAll().forEach((cookie) => {
+        if (cookie.name.startsWith("sb-")) {
+          redirectResponse.cookies.delete(cookie.name);
+        }
+      });
+      return redirectResponse;
+    }
   }
 
   if (user && path === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/marketplace";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Phone, GraduationCap, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { updateProfile } from "@/actions/profile";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,10 @@ type FieldErrors = {
   phone?: string;
 };
 
-export function ProfileForm({ user, redirectTo = "/marketplace" }: ProfileFormProps) {
+export function ProfileForm({
+  user,
+  redirectTo = "/",
+}: ProfileFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [branch, setBranch] = useState(user.branch ?? "");
@@ -50,19 +53,19 @@ export function ProfileForm({ user, redirectTo = "/marketplace" }: ProfileFormPr
     if (!phone) {
       next.phone = "Please enter your WhatsApp number";
     } else if (!isValidPhone(phone)) {
-      next.phone = "Phone number must be exactly 10 digits";
+      next.phone = "Must be exactly 10 digits";
     }
     return next;
   }
 
   function handlePhoneChange(value: string) {
-    // Digits only, hard-cap at 10 so users cannot enter more.
     const digits = normalizePhone(value).slice(0, 10);
     setPhone(digits);
     if (touched) {
       setErrors((prev) => ({
         ...prev,
-        phone: digits.length === 10 ? undefined : "Phone number must be exactly 10 digits",
+        phone:
+          digits.length === 10 ? undefined : "Must be exactly 10 digits",
       }));
     }
   }
@@ -77,7 +80,7 @@ export function ProfileForm({ user, redirectTo = "/marketplace" }: ProfileFormPr
         nextErrors.branch ??
           nextErrors.year ??
           nextErrors.phone ??
-          "Please complete all required fields"
+          "Please fill in all required fields"
       );
       return;
     }
@@ -90,7 +93,7 @@ export function ProfileForm({ user, redirectTo = "/marketplace" }: ProfileFormPr
       try {
         const result = await updateProfile(formData);
         if (result.success) {
-          toast.success("Profile saved!");
+          toast.success("Profile saved — welcome to GEC Exchange!");
           router.push(redirectTo);
           router.refresh();
         } else {
@@ -104,20 +107,20 @@ export function ProfileForm({ user, redirectTo = "/marketplace" }: ProfileFormPr
   }
 
   return (
-    <form action={handleSubmit} className="space-y-5" noValidate>
-      <div className="space-y-2">
-        <Label>Name</Label>
-        <Input value={user.name} disabled />
+    <form action={handleSubmit} className="space-y-6" noValidate>
+      {/* Name + Email — read-only, show with reduced emphasis */}
+      <div className="space-y-1 rounded-xl bg-muted/40 px-4 py-3">
+        <p className="text-xs text-muted-foreground">Signed in as</p>
+        <p className="font-semibold text-foreground">{user.name}</p>
+        <p className="text-sm text-muted-foreground">{user.email}</p>
       </div>
 
+      {/* Branch */}
       <div className="space-y-2">
-        <Label>Email</Label>
-        <Input value={user.email} disabled />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="branch">
-          Branch <span className="text-destructive">*</span>
+        <Label htmlFor="branch" className="flex items-center gap-1.5 text-sm font-medium">
+          <GraduationCap className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          Branch
+          <span className="text-destructive" aria-hidden="true">*</span>
         </Label>
         <Select
           value={branch || null}
@@ -152,9 +155,12 @@ export function ProfileForm({ user, redirectTo = "/marketplace" }: ProfileFormPr
         ) : null}
       </div>
 
+      {/* Year */}
       <div className="space-y-2">
-        <Label htmlFor="year">
-          Year <span className="text-destructive">*</span>
+        <Label htmlFor="year" className="flex items-center gap-1.5 text-sm font-medium">
+          <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          Year
+          <span className="text-destructive" aria-hidden="true">*</span>
         </Label>
         <Select
           value={year || null}
@@ -189,29 +195,53 @@ export function ProfileForm({ user, redirectTo = "/marketplace" }: ProfileFormPr
         ) : null}
       </div>
 
+      {/* WhatsApp number */}
       <div className="space-y-2">
-        <Label htmlFor="phone">
-          WhatsApp Number <span className="text-destructive">*</span>
+        <Label
+          htmlFor="phone"
+          className="flex items-center gap-1.5 text-sm font-medium"
+        >
+          <Phone className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          WhatsApp number
+          <span className="text-destructive" aria-hidden="true">*</span>
         </Label>
-        <Input
-          id="phone"
-          name="phone"
-          type="tel"
-          inputMode="numeric"
-          autoComplete="tel-national"
-          required
-          maxLength={10}
-          pattern="[0-9]{10}"
-          value={phone}
-          onChange={(e) => handlePhoneChange(e.target.value)}
-          onBlur={() => setTouched(true)}
-          placeholder="9876543210"
-          aria-invalid={Boolean(errors.phone)}
-          aria-describedby="phone-help"
-        />
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground select-none">
+            +91
+          </span>
+          <Input
+            id="phone"
+            name="phone"
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel-national"
+            required
+            maxLength={10}
+            pattern="[0-9]{10}"
+            value={phone}
+            onChange={(e) => handlePhoneChange(e.target.value)}
+            onBlur={() => setTouched(true)}
+            placeholder="9876543210"
+            aria-invalid={Boolean(errors.phone)}
+            aria-describedby="phone-help"
+            className="pl-11"
+          />
+          {phone.length > 0 && (
+            <span
+              className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs tabular-nums ${
+                phone.length === 10
+                  ? "text-emerald-600"
+                  : "text-muted-foreground"
+              }`}
+              aria-hidden="true"
+            >
+              {phone.length}/10
+            </span>
+          )}
+        </div>
         <p id="phone-help" className="text-xs text-muted-foreground">
-          Exactly 10 digits. Only shared with a buyer after you accept their
-          request.
+          Only shared with a buyer after you accept their request — never shown
+          publicly.
         </p>
         {errors.phone ? (
           <p className="text-xs text-destructive" role="alert">
@@ -222,17 +252,17 @@ export function ProfileForm({ user, redirectTo = "/marketplace" }: ProfileFormPr
 
       <Button
         type="submit"
-        className="w-full"
+        className="w-full gap-2"
         size="lg"
         disabled={isPending || !canSubmit}
       >
         {isPending ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             Saving…
           </>
         ) : (
-          "Save Profile"
+          "Save and continue →"
         )}
       </Button>
     </form>

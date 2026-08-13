@@ -243,7 +243,7 @@ export async function acceptRequest(requestId: string): Promise<ActionResult> {
 
     revalidatePath("/dashboard/requests");
     revalidatePath("/dashboard");
-    revalidatePath("/marketplace");
+    revalidatePath("/");
     revalidatePath(`/listing/${request.listingId}`);
 
     return { success: true };

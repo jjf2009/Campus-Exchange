@@ -16,25 +16,30 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b pb-px sm:flex-col sm:border-b-0 sm:border-r sm:pr-4">
+    <nav
+      className="flex gap-1 overflow-x-auto pb-1 sm:flex-col sm:overflow-x-visible sm:pb-0"
+      aria-label="Dashboard navigation"
+    >
       {links.map(({ href, label, icon: Icon }) => {
         const active =
           href === "/dashboard"
             ? pathname === "/dashboard"
             : pathname.startsWith(href);
+
         return (
           <Link
             key={href}
             href={href}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "flex shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-150",
               active
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4" />
-            {label}
+            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{label}</span>
           </Link>
         );
       })}

@@ -41,7 +41,7 @@ export async function updateProfile(
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/profile");
     revalidatePath("/profile/setup");
-    revalidatePath("/marketplace");
+    revalidatePath("/");
 
     return { success: true };
   } catch (error) {

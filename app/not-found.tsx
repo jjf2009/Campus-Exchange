@@ -8,7 +8,7 @@ export default function NotFound() {
       <p className="text-muted-foreground">
         That page or listing could not be found.
       </p>
-      <Button render={<Link href="/marketplace" />} nativeButton={false}>
+      <Button render={<Link href="/" />} nativeButton={false}>
               Back to marketplace
             </Button>
     </div>

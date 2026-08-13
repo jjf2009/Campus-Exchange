@@ -1,17 +1,12 @@
 import Link from "next/link";
 import { signInWithGoogle } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { APP_NAME } from "@/lib/constants";
+import { ShieldCheck, Lock, Users } from "lucide-react";
 
 export const metadata = {
-  title: "Login",
+  title: "Login — GEC Exchange",
+  description: "Sign in to buy and sell used academic gear with fellow Goa College of Engineering students.",
 };
 
 export default async function LoginPage({
@@ -20,53 +15,110 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const params = await searchParams;
-  const next = params.next ?? "/marketplace";
+  const next = params.next ?? "/";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md shadow-md">
-        <CardHeader className="text-center">
-          <Link
-            href="/"
-            className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground"
-          >
-            GEC
+    <div className="flex min-h-screen flex-col bg-warm-tint">
+      {/* Minimal Header */}
+      <header className="border-b bg-background px-4 py-4">
+        <div className="mx-auto flex max-w-6xl items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
+              GEC
+            </div>
+            <span className="font-semibold text-foreground">{APP_NAME}</span>
           </Link>
-          <CardTitle className="text-2xl">Welcome to {APP_NAME}</CardTitle>
-          <CardDescription>
-            Sign in with your Google account to buy and sell campus essentials.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {params.error ? (
-            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">
-              Sign-in failed. Please try again.
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex flex-1 items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md space-y-6">
+          {/* Logo / Tagline */}
+          <div className="text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm">
+              GEC
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              Welcome back
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Buy and sell lab gear, books, and hostel essentials within GEC.
             </p>
-          ) : null}
-          <form
-            action={async () => {
-              "use server";
-              await signInWithGoogle(next);
-            }}
-          >
-            <Button type="submit" size="lg" className="w-full">
-              <GoogleIcon />
-              Continue with Google
-            </Button>
-          </form>
-          <p className="text-center text-xs text-muted-foreground">
-            By continuing you agree this marketplace is for GEC students and
-            that payments happen offline.
-          </p>
-        </CardContent>
-      </Card>
+          </div>
+
+          {/* Card */}
+          <div className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+            {params.error ? (
+              <div
+                className="mb-5 rounded-lg border border-destructive/20 bg-destructive/8 px-3 py-2 text-center text-sm text-destructive"
+                role="alert"
+              >
+                Sign-in failed. Please use your student account.
+              </div>
+            ) : null}
+
+            <form
+              action={async () => {
+                "use server";
+                await signInWithGoogle(next);
+              }}
+            >
+              <Button type="submit" size="lg" className="w-full gap-2">
+                <GoogleIcon />
+                Continue with Google
+              </Button>
+            </form>
+
+            <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">
+              Secure authentication via Google. We only access your basic details
+              (name, email) to verify your GEC identity.
+            </p>
+          </div>
+
+          {/* Quick Features / Trust Notes */}
+          <div className="grid grid-cols-3 gap-2.5 pt-2">
+            <TrustNote
+              icon={<ShieldCheck className="h-4 w-4" />}
+              text="Verified GEC Students"
+            />
+            <TrustNote
+              icon={<Lock className="h-4 w-4" />}
+              text="WhatsApp Privacy"
+            />
+            <TrustNote
+              icon={<Users className="h-4 w-4" />}
+              text="Campus Handover"
+            />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function TrustNote({
+  icon,
+  text,
+}: {
+  icon: React.ReactNode;
+  text: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 text-center">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <p className="text-[11px] font-medium text-muted-foreground leading-tight">
+        {text}
+      </p>
     </div>
   );
 }
 
 function GoogleIcon() {
   return (
-    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
       <path
         fill="currentColor"
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

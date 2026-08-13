@@ -6,20 +6,13 @@ import { Footer } from "@/components/Footer";
 import { ListingForm } from "@/components/ListingForm";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { db } from "@/db";
 import { listings } from "@/db/schema";
 import { requireCompleteProfile } from "@/lib/auth";
 import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 
 export const metadata = {
-  title: "Edit Listing",
+  title: "Edit Listing — GEC Exchange",
 };
 
 export default async function EditListingPage({
@@ -42,7 +35,7 @@ export default async function EditListingPage({
   }
 
   if (listing.sellerId !== user.id) {
-    redirect("/marketplace");
+    redirect("/");
   }
 
   if (listing.status === "SOLD") {
@@ -52,28 +45,31 @@ export default async function EditListingPage({
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar user={user} notifications={notifications} />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
+        {/* Back */}
         <Button
           variant="ghost"
           size="sm"
-          className="mb-6"
+          className="mb-6 gap-1.5 text-muted-foreground hover:text-foreground"
           render={<Link href={`/listing/${id}`} />}
           nativeButton={false}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to listing
         </Button>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Edit listing</CardTitle>
-            <CardDescription>
-              Update details for {listing.title}.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ListingForm mode="edit" listing={listing} />
-          </CardContent>
-        </Card>
+
+        {/* Page header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">Edit listing</h1>
+          <p className="mt-2 text-muted-foreground">
+            Update details for &ldquo;{listing.title}&rdquo;.
+          </p>
+        </div>
+
+        {/* Form in a clean surface */}
+        <div className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+          <ListingForm mode="edit" listing={listing} />
+        </div>
       </main>
       <Footer />
     </div>

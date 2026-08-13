@@ -17,11 +17,15 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 
+import Link from "next/link";
+
 interface RequestButtonProps {
   listingId: string;
   disabled?: boolean;
   disabledReason?: string;
   alreadyRequested?: boolean;
+  isAuthenticated: boolean;
+  isProfileComplete: boolean;
 }
 
 export function RequestButton({
@@ -29,14 +33,42 @@ export function RequestButton({
   disabled,
   disabledReason,
   alreadyRequested,
+  isAuthenticated,
+  isProfileComplete,
 }: RequestButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  if (!isAuthenticated) {
+    return (
+      <Button
+        render={<Link href={`/login?next=/listing/${listingId}`} />}
+        nativeButton={false}
+        className="w-full sm:w-auto font-bold"
+        size="lg"
+      >
+        Sign in to Request
+      </Button>
+    );
+  }
+
+  if (!isProfileComplete) {
+    return (
+      <Button
+        render={<Link href="/profile/setup" />}
+        nativeButton={false}
+        className="w-full sm:w-auto font-bold"
+        size="lg"
+      >
+        Complete Profile to Request
+      </Button>
+    );
+  }
+
   if (alreadyRequested) {
     return (
-      <Button disabled className="w-full sm:w-auto" size="lg">
+      <Button disabled className="w-full sm:w-auto font-semibold" size="lg">
         Request Sent
       </Button>
     );
@@ -45,7 +77,7 @@ export function RequestButton({
   if (disabled) {
     return (
       <div className="space-y-1">
-        <Button disabled className="w-full sm:w-auto" size="lg">
+        <Button disabled className="w-full sm:w-auto font-semibold" size="lg">
           Unavailable
         </Button>
         {disabledReason ? (

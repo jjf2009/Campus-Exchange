@@ -16,12 +16,17 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen flex-col">
       <Navbar user={user} notifications={notifications} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+        {/* Page header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Hi, {user.name.split(" ")[0]} 👋
+          </h1>
           <p className="mt-1 text-muted-foreground">
-            Manage your listings, requests, and profile.
+            Your personal campus marketplace hub.
           </p>
         </div>
+
+        {/* Sidebar + content grid */}
         <div className="grid gap-8 sm:grid-cols-[200px_1fr]">
           <DashboardNav />
           <div>{children}</div>

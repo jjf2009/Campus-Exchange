@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/app-url";
 
-export async function signInWithGoogle(next = "/marketplace") {
+export async function signInWithGoogle(next = "/") {
   const supabase = await createClient();
   const appUrl = getAppUrl();
 

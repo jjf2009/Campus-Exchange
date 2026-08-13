@@ -27,7 +27,7 @@ export default function GlobalError({
           <Button onClick={reset}>Try again</Button>
           <Button
             variant="outline"
-            render={<Link href="/marketplace" />}
+            render={<Link href="/" />}
             nativeButton={false}
           >
             Marketplace

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing email" }, { status: 400 });
   }
 
-  const next = url.searchParams.get("next") ?? "/marketplace";
+  const next = url.searchParams.get("next") ?? "/";
   const response = NextResponse.redirect(new URL(next, url.origin));
 
   response.cookies.set(

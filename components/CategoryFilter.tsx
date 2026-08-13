@@ -17,32 +17,40 @@ export function CategoryFilter() {
     } else {
       params.set("category", category);
     }
+    // Reset to page 1 when changing filter
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
 
   const options = ["all", ...CATEGORIES];
 
-return (
-  <div className="flex flex-wrap gap-2">
-    {options.map((category) => {
-      const isActive = active === category;
+  return (
+    <div
+      className="flex flex-wrap gap-2"
+      role="group"
+      aria-label="Filter by category"
+    >
+      {options.map((category) => {
+        const isActive = active === category;
+        const label = category === "all" ? "All" : category;
 
-      return (
-        <button
-          key={category}
-          type="button"
-          onClick={() => select(category)}
-          className={cn(
-            "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
-            isActive
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
-          )}
-        >
-          {category === "all" ? "All" : category}
-        </button>
-      );
-    })}
-  </div>
-);
+        return (
+          <button
+            key={category}
+            type="button"
+            onClick={() => select(category)}
+            aria-pressed={isActive}
+            className={cn(
+              "shrink-0 cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150",
+              isActive
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "border border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-muted/50"
+            )}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }

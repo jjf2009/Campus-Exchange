@@ -55,7 +55,7 @@ export async function createListing(
       };
     }
 
-    revalidatePath("/marketplace");
+    revalidatePath("/");
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/listings");
 
@@ -123,7 +123,7 @@ export async function updateListing(formData: FormData): Promise<ActionResult> {
       })
       .where(eq(listings.id, id));
 
-    revalidatePath("/marketplace");
+    revalidatePath("/");
     revalidatePath(`/listing/${id}`);
     revalidatePath("/dashboard/listings");
     revalidatePath(`/edit-listing/${id}`);
@@ -161,7 +161,7 @@ export async function deleteListing(listingId: string): Promise<ActionResult> {
       .set({ status: "ARCHIVED", updatedAt: new Date() })
       .where(eq(listings.id, listingId));
 
-    revalidatePath("/marketplace");
+    revalidatePath("/");
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/listings");
 
@@ -230,7 +230,7 @@ export async function markListingSold(
       });
     }
 
-    revalidatePath("/marketplace");
+    revalidatePath("/");
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/listings");
     revalidatePath(`/listing/${listingId}`);

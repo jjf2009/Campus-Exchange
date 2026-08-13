@@ -6,12 +6,12 @@ import { getAppUrl } from "@/lib/app-url";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const nextParam = searchParams.get("next") ?? "/marketplace";
+  const nextParam = searchParams.get("next") ?? "/";
   // Only allow relative in-app paths to prevent open redirects.
   const next =
     nextParam.startsWith("/") && !nextParam.startsWith("//")
       ? nextParam
-      : "/marketplace";
+      : "/";
   const appUrl = getAppUrl();
 
   if (code) {
