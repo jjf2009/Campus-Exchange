@@ -1,6 +1,6 @@
 # GEC Exchange (Campus Exchange)
 
-Marketplace exclusively for **Goa College of Engineering** students to buy and sell used academic equipment, electronics, books, and hostel items.
+Marketpl ace exclusively for **Goa College of Engineering** students to buy and sell used academic equipment, electronics, books, and hostel items.
 
 No online payments — students list items, request them, and connect on WhatsApp after the seller accepts.
 
