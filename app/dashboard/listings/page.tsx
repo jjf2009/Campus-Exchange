@@ -86,12 +86,14 @@ export default async function MyListingsPage() {
                 <p className="text-sm text-muted-foreground">
                   {formatPrice(item.price)} · {item.category} · {item.condition}
                 </p>
-                {item.status === "AVAILABLE" || item.status === "RESERVED" ? (
+                {item.status === "RESERVED" && item.heldAt ? (
+                  <p className="text-xs font-semibold">
+                    📌 On hold for {item.holderName ?? "a buyer"} since{" "}
+                    {formatRelativeDate(item.heldAt)}
+                  </p>
+                ) : item.status === "AVAILABLE" ? (
                   <p className="text-xs text-muted-foreground">
-                    Confirmed {formatRelativeDate(item.lastConfirmedAt)}
-                    {item.contactCount > 0
-                      ? ` · ${item.contactCount} interested`
-                      : ""}
+                    Updated {formatRelativeDate(item.lastConfirmedAt)}
                   </p>
                 ) : null}
               </div>
@@ -99,7 +101,7 @@ export default async function MyListingsPage() {
                 listingId={item.id}
                 status={item.status as ListingStatus}
                 buyers={buyersByListing.get(item.id) ?? []}
-                askToConfirm={Boolean(item.nudgedAt)}
+                heldByUserId={item.heldByUserId}
               />
             </CardContent>
           </Card>

@@ -12,7 +12,6 @@ import { SearchBar } from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
 import { getMarketplaceListings } from "@/db/queries/listings";
 import { requireCompleteProfile } from "@/lib/auth";
-import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 import type { Category, Condition } from "@/types";
 
 const ITEMS_PER_PAGE = 8;
@@ -28,12 +27,11 @@ export default async function MarketplacePage({
 }) {
   const user = await requireCompleteProfile();
   const params = await searchParams;
-  const notifications = await getNavbarNotifications(user.id);
   const currentPage = Math.max(1, Number(params.page ?? "1") || 1);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar user={user} notifications={notifications} />
+      <Navbar user={user} />
       <section className="border-b-2 border-ink bg-grid">
         <div className="mx-auto w-full max-w-6xl px-4 pt-10 pb-6">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -150,9 +148,7 @@ async function MarketplaceGrid({
             imageUrl={item.imageUrl}
             sellerName={item.sellerName}
             createdAt={item.createdAt}
-            reserved={item.status === "RESERVED"}
             lastConfirmedAt={item.lastConfirmedAt}
-            contactCount={item.contactCount}
           />
         ))}
       </div>

@@ -16,7 +16,6 @@ import {
 import { db } from "@/db";
 import { listings } from "@/db/schema";
 import { requireCompleteProfile } from "@/lib/auth";
-import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 
 export const metadata = {
   title: "Edit Listing",
@@ -29,7 +28,6 @@ export default async function EditListingPage({
 }) {
   const user = await requireCompleteProfile();
   const { id } = await params;
-  const notifications = await getNavbarNotifications(user.id);
 
   const [listing] = await db
     .select()
@@ -51,7 +49,7 @@ export default async function EditListingPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar user={user} notifications={notifications} />
+      <Navbar user={user} />
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <Button
           variant="ghost"

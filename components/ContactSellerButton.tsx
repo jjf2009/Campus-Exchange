@@ -1,135 +1,80 @@
-"use client";
-
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2, MessageCircle } from "lucide-react";
-import { toast } from "sonner";
-import { contactSeller, reportUnavailable } from "@/actions/contacts";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MAX_ACTIVE_HOLDS } from "@/lib/constants";
 
-interface ContactSellerButtonProps {
-  listingId: string;
-  /** False when the listing is sold/hidden. */
-  available: boolean;
-  unavailableReason?: string;
-  /** The viewer already contacted this seller. */
-  contacted: boolean;
-  /** The viewer already reported the item as gone. */
-  reported: boolean;
-}
+export type ContactState =
+  /** Live: tapping puts it on hold and opens WhatsApp. */
+  | "available"
+  /** On hold for the viewer: reopen the chat. */
+  | "held-by-you"
+  /** On hold for someone else. */
+  | "held"
+  | "sold"
+  | "hidden";
 
+const ERRORS: Record<string, string> = {
+  taken: "Someone else just started a chat about this item.",
+  limit: `You already have ${MAX_ACTIVE_HOLDS} items on hold. Finish those deals first (or ask the seller to relist them).`,
+  daily: "You've contacted a lot of sellers today. Try again tomorrow.",
+  nophone: "This seller hasn't added a WhatsApp number yet.",
+  own: "This is your own listing.",
+};
+
+const UNAVAILABLE: Record<Exclude<ContactState, "available" | "held-by-you">, string> = {
+  held: "Someone is already talking to the seller about this. Check back later: it comes back if the deal falls through.",
+  sold: "This item has been sold.",
+  hidden: "This listing is hidden right now.",
+};
+
+/**
+ * A plain form post (no client JS): the server puts the item on hold and
+ * redirects straight to WhatsApp in a new tab.
+ */
 export function ContactSellerButton({
   listingId,
-  available,
-  unavailableReason,
-  contacted,
-  reported,
-}: ContactSellerButtonProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [hasReported, setHasReported] = useState(reported);
+  state,
+  error,
+}: {
+  listingId: string;
+  state: ContactState;
+  error?: string;
+}) {
+  const errorMessage = error ? ERRORS[error] : undefined;
 
-  if (!available) {
+  if (state !== "available" && state !== "held-by-you") {
     return (
-      <div className="space-y-1">
+      <div className="space-y-2">
         <Button disabled variant="outline" className="w-full" size="xl">
-          Unavailable
+          {state === "held" ? "On hold" : "Unavailable"}
         </Button>
-        {unavailableReason ? (
-          <p className="text-sm font-medium text-muted-foreground">
-            {unavailableReason}
-          </p>
-        ) : null}
+        <p className="text-sm font-medium text-muted-foreground">
+          {UNAVAILABLE[state]}
+        </p>
       </div>
     );
   }
 
-  function handleContact() {
-    // Open the tab synchronously so popup blockers allow it, then point it
-    // at WhatsApp once the server has recorded the contact.
-    const tab = window.open("", "_blank");
-    startTransition(async () => {
-      try {
-        const result = await contactSeller(listingId);
-        if (result.success && result.data) {
-          if (tab) {
-            tab.opener = null;
-            tab.location.href = result.data.url;
-          } else {
-            window.location.href = result.data.url;
-          }
-          router.refresh();
-        } else {
-          tab?.close();
-          toast.error(result.error ?? "Could not open the chat");
-        }
-      } catch (error) {
-        tab?.close();
-        console.error("contactSeller client error:", error);
-        toast.error("Could not open the chat. Please try again.");
-      }
-    });
-  }
-
-  function handleReport() {
-    if (!confirm("Did the seller tell you this item is already sold?")) return;
-    startTransition(async () => {
-      try {
-        const result = await reportUnavailable(listingId);
-        if (result.success) {
-          setHasReported(true);
-          toast.success("Thanks! We'll check with the seller.");
-          router.refresh();
-        } else {
-          toast.error(result.error ?? "Could not send the report");
-        }
-      } catch (error) {
-        console.error("reportUnavailable client error:", error);
-        toast.error("Could not send the report. Please try again.");
-      }
-    });
-  }
-
   return (
     <div className="space-y-2">
-      <Button
-        size="xl"
-        variant="whatsapp"
-        className="w-full"
-        onClick={handleContact}
-        disabled={isPending}
-      >
-        {isPending ? (
-          <Loader2 className="size-5 animate-spin" />
-        ) : (
-          <MessageCircle className="size-5" />
-        )}
-        {contacted ? "Chat again on WhatsApp" : "Chat on WhatsApp"}
-      </Button>
-      {contacted ? (
-        hasReported ? (
-          <p className="text-sm font-medium text-muted-foreground">
-            You reported this as sold. We&apos;ve asked the seller to confirm.
-          </p>
-        ) : (
-          <p className="text-sm font-medium text-muted-foreground">
-            Seller said it&apos;s gone?{" "}
-            <button
-              type="button"
-              onClick={handleReport}
-              disabled={isPending}
-              className="font-medium text-foreground underline underline-offset-2"
-            >
-              Report as sold
-            </button>
-          </p>
-        )
-      ) : (
-        <p className="text-sm font-medium text-muted-foreground">
-          Opens WhatsApp with a message about this item. Pay and pick up in
-          person.
+      {errorMessage ? (
+        <p
+          role="alert"
+          className="rounded-lg border-2 border-ink bg-pink px-3 py-2 text-sm font-semibold"
+        >
+          {errorMessage}
         </p>
-      )}
+      ) : null}
+      <form action={`/listing/${listingId}/chat`} method="post" target="_blank">
+        <Button type="submit" size="xl" variant="whatsapp" className="w-full">
+          <MessageCircle className="size-5" />
+          {state === "held-by-you" ? "Open WhatsApp again" : "Chat on WhatsApp"}
+        </Button>
+      </form>
+      <p className="text-sm font-medium text-muted-foreground">
+        {state === "held-by-you"
+          ? "📌 This item is on hold for you and hidden from everyone else."
+          : "Opens WhatsApp with the seller. The item is held for you while you talk."}
+      </p>
     </div>
   );
 }

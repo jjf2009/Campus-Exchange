@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { requireCompleteProfile } from "@/lib/auth";
-import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 
 export const metadata = {
   title: "New Listing",
@@ -20,11 +19,10 @@ export const metadata = {
 
 export default async function NewListingPage() {
   const user = await requireCompleteProfile();
-  const notifications = await getNavbarNotifications(user.id);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar user={user} notifications={notifications} />
+      <Navbar user={user} />
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <Button
           variant="ghost"

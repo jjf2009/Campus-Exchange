@@ -124,7 +124,7 @@ export default async function LandingPage() {
                 wiggle
                 className="absolute top-0 right-6 z-20 text-base"
               >
-                🔥 5 want this
+                📌 Held for you
               </Sticker>
             </div>
           </div>
@@ -170,7 +170,7 @@ export default async function LandingPage() {
                 n={2}
                 icon={<MessageCircle className="size-6" />}
                 title="Tap WhatsApp"
-                body="A message about the item is already typed. Just hit send."
+                body="WhatsApp opens with the message ready. The item hides from everyone else while you talk."
               />
               <Step
                 n={3}

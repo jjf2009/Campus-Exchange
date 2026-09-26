@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BellRing, Bookmark, Package, ShoppingBag, Users } from "lucide-react";
+import { Pin, Bookmark, Package, ShoppingBag, Users } from "lucide-react";
 import { ListingActions } from "@/components/ListingActions";
 import { ListingStatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,11 @@ import {
 } from "@/components/ui/card";
 import { getContactsForSeller } from "@/db/queries/contacts";
 import {
-  getListingsNeedingAttention,
+  getHeldListings,
   getSellerStats,
 } from "@/db/queries/listings";
 import { requireCompleteProfile } from "@/lib/auth";
+import { EXPIRE_AFTER_DAYS } from "@/lib/constants";
 import { formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
 import type { ListingStatus } from "@/types";
@@ -28,13 +29,10 @@ export default async function DashboardPage() {
   const user = await requireCompleteProfile();
   const [stats, attention, contacts] = await Promise.all([
     getSellerStats(user.id),
-    getListingsNeedingAttention(user.id),
+    getHeldListings(user.id),
     getContactsForSeller(user.id),
   ]);
 
-  const liveContacts = contacts.filter(
-    (c) => c.listingStatus === "AVAILABLE" || c.listingStatus === "RESERVED"
-  );
   const buyersByListing = new Map<string, { id: string; name: string }[]>();
   for (const c of contacts) {
     const list = buyersByListing.get(c.listingId) ?? [];
@@ -48,11 +46,11 @@ export default async function DashboardPage() {
         <Card className="bg-sun">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-2xl">
-              <BellRing className="size-5" />
-              Are these still available?
+              <Pin className="size-5" />
+              Hidden right now
             </CardTitle>
             <CardDescription className="font-medium text-ink/80">
-              One tap keeps the marketplace accurate for everyone.
+              Deal fell through? Relist it. Done? Mark it sold.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -70,18 +68,17 @@ export default async function DashboardPage() {
                   </Link>
                   <ListingStatusBadge status={listing.status as ListingStatus} />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatPrice(listing.price)} · last confirmed{" "}
-                  {formatRelativeDate(listing.lastConfirmedAt)}
-                  {listing.contactCount > 0
-                    ? ` · ${listing.contactCount} interested`
-                    : ""}
+                <p className="text-xs font-medium text-muted-foreground">
+                  {formatPrice(listing.price)} ·{" "}
+                  {listing.status === "RESERVED" && listing.heldAt
+                    ? `on hold for ${listing.holderName ?? "a buyer"} since ${formatRelativeDate(listing.heldAt)}`
+                    : `hidden after ${EXPIRE_AFTER_DAYS} days without changes`}
                 </p>
                 <ListingActions
                   listingId={listing.id}
                   status={listing.status as ListingStatus}
                   buyers={buyersByListing.get(listing.id) ?? []}
-                  askToConfirm
+                  heldByUserId={listing.heldByUserId}
                 />
               </div>
             ))}
@@ -97,7 +94,7 @@ export default async function DashboardPage() {
           className="bg-lime"
         />
         <StatCard
-          title="Reserved"
+          title="On hold"
           value={stats.reserved}
           icon={<Bookmark className="h-4 w-4" />}
           className="bg-sun"
@@ -109,8 +106,8 @@ export default async function DashboardPage() {
           className="bg-card"
         />
         <StatCard
-          title="Interested buyers"
-          value={liveContacts.length}
+          title="Buyers so far"
+          value={contacts.length}
           icon={<Users className="h-4 w-4" />}
           className="bg-pink"
         />
@@ -143,8 +140,7 @@ export default async function DashboardPage() {
             render={<Link href="/dashboard/requests" />}
             nativeButton={false}
           >
-            Interested buyers
-            {liveContacts.length > 0 ? ` (${liveContacts.length})` : ""}
+            Buyers who messaged you
           </Button>
         </CardContent>
       </Card>

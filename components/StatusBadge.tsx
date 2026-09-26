@@ -10,7 +10,7 @@ const listingStyles: Record<
     className: "bg-lime text-ink",
   },
   RESERVED: {
-    label: "Reserved",
+    label: "On hold",
     className: "bg-sun text-ink",
   },
   SOLD: {

@@ -15,14 +15,10 @@ interface ListingCardProps {
   imageUrl?: string | null;
   sellerName?: string;
   createdAt: Date | string;
-  reserved?: boolean;
   lastConfirmedAt?: Date | string;
-  contactCount?: number;
 }
 
 const NEW_FOR_MS = 48 * 60 * 60 * 1000;
-/** Show the "🔥 N want this" sticker from this many contacts. */
-const HOT_AT = 2;
 
 export function ListingCard({
   id,
@@ -33,9 +29,7 @@ export function ListingCard({
   imageUrl,
   sellerName,
   createdAt,
-  reserved = false,
   lastConfirmedAt,
-  contactCount = 0,
 }: ListingCardProps) {
   const displayImage =
     imageUrl && imageUrl.startsWith("/")
@@ -56,21 +50,11 @@ export function ListingCard({
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
         />
-        <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
-          {isNew && !reserved ? (
+        {isNew ? (
+          <div className="absolute top-2 left-2">
             <Sticker color="lime" tilt={-5} className="text-xs">
               NEW
             </Sticker>
-          ) : null}
-          {contactCount >= HOT_AT && !reserved ? (
-            <Sticker color="pink" tilt={3} className="text-xs">
-              🔥 {contactCount} want this
-            </Sticker>
-          ) : null}
-        </div>
-        {reserved ? (
-          <div className="absolute inset-x-[-10%] top-1/2 -translate-y-1/2 -rotate-6 border-y-2 border-ink bg-sun py-1.5 text-center font-display text-sm font-extrabold tracking-[0.2em] uppercase">
-            Reserved · Reserved · Reserved
           </div>
         ) : null}
         <div className="absolute right-2 bottom-2">

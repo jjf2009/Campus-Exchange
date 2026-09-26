@@ -4,16 +4,18 @@ import { ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { ListingActions } from "@/components/ListingActions";
 import { Navbar } from "@/components/Navbar";
-import { ContactSellerButton } from "@/components/ContactSellerButton";
+import {
+  ContactSellerButton,
+  type ContactState,
+} from "@/components/ContactSellerButton";
 import { SafeImage } from "@/components/SafeImage";
 import { ListingStatusBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Sticker } from "@/components/brand";
 import { getListingById } from "@/db/queries/listings";
-import { getContact, getListingContactBuyers } from "@/db/queries/contacts";
+import { getListingContactBuyers } from "@/db/queries/contacts";
 import { requireCompleteProfile } from "@/lib/auth";
 import { CATEGORY_EMOJI, getCategoryImage } from "@/lib/constants";
-import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 import { formatFullDate, formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
 import type { Category, ListingStatus } from "@/types";
@@ -32,30 +34,38 @@ export async function generateMetadata({
 
 export default async function ListingDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const user = await requireCompleteProfile();
   const { id } = await params;
+  const { error } = await searchParams;
   const listing = await getListingById(id);
-  const notifications = await getNavbarNotifications(user.id);
 
   if (!listing || listing.status === "ARCHIVED") {
     notFound();
   }
 
   const isOwner = listing.sellerId === user.id;
-  const [contact, buyers] = await Promise.all([
-    isOwner ? null : getContact(listing.id, user.id),
-    isOwner ? getListingContactBuyers(listing.id) : [],
-  ]);
+  const buyers = isOwner ? await getListingContactBuyers(listing.id) : [];
+  const holderName =
+    isOwner && listing.heldByUserId
+      ? buyers.find((b) => b.id === listing.heldByUserId)?.name
+      : undefined;
 
-  const canContact =
-    listing.status === "AVAILABLE" || listing.status === "RESERVED";
-  let unavailableReason: string | undefined;
-  if (listing.status === "SOLD") unavailableReason = "This item has been sold.";
-  if (listing.status === "EXPIRED")
-    unavailableReason = "The seller hasn't confirmed this is still available.";
+  const canContact = listing.status === "AVAILABLE";
+  const contactState: ContactState =
+    listing.status === "AVAILABLE"
+      ? "available"
+      : listing.status === "RESERVED"
+        ? listing.heldByUserId === user.id
+          ? "held-by-you"
+          : "held"
+        : listing.status === "SOLD"
+          ? "sold"
+          : "hidden";
 
   const displayImage =
     listing.imageUrl && listing.imageUrl.startsWith("/")
@@ -65,37 +75,26 @@ export default async function ListingDetailPage({
   const actions = isOwner ? (
     <div className="space-y-3">
       <p className="font-medium">
-        {buyers.length > 0
-          ? `🔥 ${buyers.length} ${buyers.length === 1 ? "student has" : "students have"} messaged you about this.`
-          : "Your listing. Buyers will message you on WhatsApp."}
+        {listing.status === "RESERVED"
+          ? `📌 On hold for ${holderName ?? "a buyer"}. It's hidden while you talk. Relist it if the deal falls through.`
+          : listing.status === "EXPIRED"
+            ? "Hidden after 30 days without changes. Relist it if it's still for sale."
+            : "Your listing. Buyers will message you on WhatsApp."}
       </p>
       <ListingActions
         listingId={listing.id}
         status={listing.status as ListingStatus}
         buyers={buyers}
+        heldByUserId={listing.heldByUserId}
       />
     </div>
   ) : (
-    <div className="space-y-3">
-      {listing.status === "RESERVED" ? (
-        <p className="rounded-lg border-2 border-ink bg-sun p-3 text-sm font-semibold">
-          Reserved for another buyer. You can still message the seller in
-          case the deal falls through.
-        </p>
-      ) : null}
-      <ContactSellerButton
-        listingId={listing.id}
-        available={canContact}
-        unavailableReason={unavailableReason}
-        contacted={Boolean(contact)}
-        reported={Boolean(contact?.reportedUnavailableAt)}
-      />
-    </div>
+    <ContactSellerButton listingId={listing.id} state={contactState} error={error} />
   );
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip">
-      <Navbar user={user} notifications={notifications} />
+      <Navbar user={user} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <Link
           href="/marketplace"
@@ -124,16 +123,6 @@ export default async function ListingDetailPage({
             >
               {formatPrice(listing.price)}
             </Sticker>
-            {listing.contactCount >= 2 && canContact ? (
-              <Sticker
-                color="pink"
-                tilt={8}
-                wiggle
-                className="absolute -top-4 -right-2 text-base"
-              >
-                🔥 {listing.contactCount} want this
-              </Sticker>
-            ) : null}
           </div>
 
           <div className="space-y-6">
@@ -151,7 +140,7 @@ export default async function ListingDetailPage({
               </h1>
               {canContact ? (
                 <p className="inline-flex items-center gap-1.5 rounded-md border-2 border-ink bg-lime px-2 py-0.5 text-sm font-bold">
-                  ✓ Confirmed available{" "}
+                  ✓ Available · updated{" "}
                   {formatRelativeDate(listing.lastConfirmedAt)}
                 </p>
               ) : null}

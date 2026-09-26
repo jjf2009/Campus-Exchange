@@ -4,17 +4,18 @@ Version 1.0
 
 ---
 
-> **Update: contact flow.** The request/accept/reject flow described in
+> **Update: hold-on-contact flow.** The request/accept/reject flow described in
 > parts of this guide (`acceptRequest`, `rejectRequest`, `purchase_requests`)
-> has been replaced:
+> and the notification system have been removed:
 >
-> - `actions/contacts.ts`: `contactSeller` (records a `listing_contacts` row,
->   notifies the seller, returns a `wa.me` link) and `reportUnavailable`.
-> - `actions/listings.ts`: `setListingReserved`, `confirmAvailable`,
->   `markListingSold(listingId, soldToUserId?)`.
-> - `app/api/cron/listings/route.ts`: daily job (see `vercel.json`) that nudges
->   sellers and hides stale listings (`EXPIRED`), protected by `CRON_SECRET`.
-> - `purchase_requests` is kept for history only and is no longer written to.
+> - `app/listing/[id]/chat/route.ts` (POST): puts the listing on hold
+>   (`status = RESERVED`, `held_by_user_id`), records a `listing_contacts` row
+>   and 303-redirects to a `wa.me` link whose message contains the relist link.
+> - `app/listing/[id]/relist/page.tsx`: seller-only page to relist or mark sold.
+> - `actions/listings.ts`: `relistListing`, `markListingSold(listingId, soldToUserId?)`.
+> - `app/api/cron/listings/route.ts`: daily silent job that hides listings
+>   untouched for 30 days (`EXPIRED`), protected by `CRON_SECRET`.
+> - `purchase_requests` and `notifications` tables are kept for history only.
 
 # Purpose
 

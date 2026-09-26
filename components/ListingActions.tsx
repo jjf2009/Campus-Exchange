@@ -3,21 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Bookmark,
-  BookmarkX,
-  CheckCircle2,
-  Loader2,
-  Pencil,
-  RefreshCw,
-  Trash2,
-} from "lucide-react";
+import { CheckCircle2, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  confirmAvailable,
   deleteListing,
   markListingSold,
-  setListingReserved,
+  relistListing,
 } from "@/actions/listings";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,33 +27,37 @@ interface ListingActionsProps {
   status: ListingStatus;
   /** Buyers who contacted this listing, for the "who bought it?" picker. */
   buyers?: { id: string; name: string }[];
-  /** Show a "Still available" button (seller was asked to confirm). */
-  askToConfirm?: boolean;
+  /** Buyer the item is on hold for; preselected as the buyer. */
+  heldByUserId?: string | null;
+  /** Called after a successful action instead of refreshing (e.g. redirect). */
+  onDone?: () => void;
 }
 
 export function ListingActions({
   listingId,
   status,
   buyers = [],
-  askToConfirm = false,
+  heldByUserId,
+  onDone,
 }: ListingActionsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [soldOpen, setSoldOpen] = useState(false);
-  const [soldTo, setSoldTo] = useState("");
+  const [soldTo, setSoldTo] = useState(heldByUserId ?? "");
 
   function run(
     action: () => Promise<ActionResult>,
     successMessage: string,
-    onDone?: () => void
+    after?: () => void
   ) {
     startTransition(async () => {
       try {
         const result = await action();
         if (result.success) {
           toast.success(successMessage);
-          onDone?.();
-          router.refresh();
+          after?.();
+          if (onDone) onDone();
+          else router.refresh();
         } else {
           toast.error(result.error ?? "Failed to update");
         }
@@ -78,62 +73,23 @@ export function ListingActions({
     run(() => deleteListing(listingId), "Listing removed");
   }
 
-  const isLive = status === "AVAILABLE" || status === "RESERVED";
-  const isOpen = isLive || status === "EXPIRED";
+  const isOpen =
+    status === "AVAILABLE" || status === "RESERVED" || status === "EXPIRED";
+  const canRelist = status === "RESERVED" || status === "EXPIRED";
 
   return (
     <div className="flex flex-wrap gap-2">
-      {status === "EXPIRED" ? (
+      {canRelist ? (
         <Button
           size="sm"
+          variant="lime"
           onClick={() =>
-            run(() => confirmAvailable(listingId), "Listing is live again")
+            run(() => relistListing(listingId), "Back on the marketplace")
           }
           disabled={isPending}
         >
           <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-          Renew
-        </Button>
-      ) : null}
-      {askToConfirm && isLive ? (
-        <Button
-          size="sm"
-          onClick={() =>
-            run(() => confirmAvailable(listingId), "Thanks for confirming!")
-          }
-          disabled={isPending}
-        >
-          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-          Still available
-        </Button>
-      ) : null}
-      {status === "AVAILABLE" ? (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            run(() => setListingReserved(listingId, true), "Marked as reserved")
-          }
-          disabled={isPending}
-        >
-          <Bookmark className="mr-1.5 h-3.5 w-3.5" />
-          Reserve
-        </Button>
-      ) : null}
-      {status === "RESERVED" ? (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            run(
-              () => setListingReserved(listingId, false),
-              "Available again"
-            )
-          }
-          disabled={isPending}
-        >
-          <BookmarkX className="mr-1.5 h-3.5 w-3.5" />
-          Unreserve
+          Relist
         </Button>
       ) : null}
       {isOpen ? (
@@ -176,8 +132,7 @@ export function ListingActions({
           <DialogHeader>
             <DialogTitle>Mark as sold?</DialogTitle>
             <DialogDescription>
-              It will leave the marketplace, and everyone who asked about it
-              will be told it&apos;s gone.
+              It will stay off the marketplace for good.
             </DialogDescription>
           </DialogHeader>
           {buyers.length > 0 ? (
@@ -186,7 +141,7 @@ export function ListingActions({
               <select
                 value={soldTo}
                 onChange={(e) => setSoldTo(e.target.value)}
-                className="h-9 w-full rounded-lg border bg-background px-2.5"
+                className="h-9 w-full rounded-lg border-2 border-ink bg-background px-2.5"
               >
                 <option value="">Someone else / not sure</option>
                 {buyers.map((b) => (

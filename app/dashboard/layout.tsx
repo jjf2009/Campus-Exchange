@@ -3,7 +3,6 @@ import { DashboardNav } from "@/components/DashboardNav";
 import { Navbar } from "@/components/Navbar";
 import { Sticker } from "@/components/brand";
 import { requireCompleteProfile } from "@/lib/auth";
-import { getNavbarNotifications } from "@/lib/notifications/notification-service";
 
 export default async function DashboardLayout({
   children,
@@ -11,11 +10,10 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await requireCompleteProfile();
-  const notifications = await getNavbarNotifications(user.id);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar user={user} notifications={notifications} />
+      <Navbar user={user} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
           <div>

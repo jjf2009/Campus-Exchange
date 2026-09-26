@@ -158,19 +158,16 @@ Complete Profile
 
 ↓
 
-Marketplace
+Marketplace → Open Listing
 
 ↓
 
-Open Listing
+Chat on WhatsApp (one tap)
 
 ↓
 
-Chat on WhatsApp (one tap, pre-filled message)
-
-↓
-
-Seller notified: "Rahul is interested in Boiler"
+Item goes ON HOLD for this buyer (hidden from everyone else)
+WhatsApp opens with a pre-filled message that includes a relist link
 
 ↓
 
@@ -178,14 +175,15 @@ Students meet and pay offline
 
 ↓
 
-Seller marks Reserved → Sold
+Deal done → nothing to do (optionally Mark Sold)
+Deal failed → seller taps the relist link → item is live again
 ```
 
-> **Why no request/accept step?** v1 had no way to know when an item sold.
-> v2 added "request → seller accepts → number revealed", which fixed that but
-> made buyers wait on sellers who rarely came back to click Accept. The
-> contact flow removes the wait and instead keeps listings fresh on the
-> seller side (see §13).
+> **Why?** v1 had no way to know when an item sold. v2 added "request →
+> seller accepts", which made buyers wait. v3 added notifications, which made
+> sellers keep checking the site. Now the first chat hides the item
+> automatically, and the seller only acts if the deal falls through, from
+> inside WhatsApp. There are no notifications.
 
 ---
 
@@ -386,25 +384,22 @@ Request Button
 
 # 12. Listing Status
 
-Each listing has one status.
-
 AVAILABLE
 
-Visible. Buyers can chat.
+Visible on the marketplace. Buyers can chat.
 
-RESERVED
+RESERVED ("On hold")
 
-Visible with a "Reserved" badge. Seller is finalising with someone.
-Reversible if the deal falls through.
+A buyer tapped Chat on WhatsApp. Hidden from the marketplace until the seller
+relists it or marks it sold.
 
 SOLD
 
-Hidden from marketplace. Optionally records which buyer bought it.
+Hidden. Records the buyer (defaults to whoever had it on hold).
 
 EXPIRED
 
-Hidden because the seller hasn't confirmed it's still available, or buyers
-reported it sold. The seller can renew it in one tap.
+Hidden after 30 days without being edited or relisted. Seller can relist.
 
 ARCHIVED
 
@@ -412,34 +407,31 @@ Owner removed listing.
 
 ---
 
-# 13. Contact Flow & Listing Freshness
+# 13. Hold-on-Contact Flow
 
 Buyer clicks **Chat on WhatsApp**
 
 ↓
 
-Contact recorded (one per buyer per listing, max 15 new sellers per day)
+Server puts the listing on hold for that buyer (only one buyer can win)
 
 ↓
 
 WhatsApp opens with
 
 ```
-Hi! I saw your Boiler (₹850) on GEC Exchange. Is it still available? <link>
+Hi! I'm interested in your Boiler (₹850) on GEC Exchange.
+<listing link>
+
+📌 GEC Exchange has hidden this item while we talk.
+If our deal doesn't work out, put it back on the marketplace here:
+<listing link>/relist
 ```
 
-↓
+Limits: 2 items on hold per buyer at once, 15 new sellers per day.
 
-Seller gets an in-app notification
-
-**How we know an item is gone**
-
-- 48h after a buyer contacts the seller, the seller is asked "Still available?"
-  (Sold / Reserved / Still available).
-- Every listing shows "Confirmed available X days ago". At 14 days the seller
-  is asked, and at 21 days the listing is hidden.
-- Buyers who contacted the seller can tap "Report as sold". 2 reports hide it.
-- When marked sold, everyone else who asked is notified.
+The relist link requires the seller to sign in. Other users see
+"Only the seller can do this".
 
 ---
 
@@ -506,47 +498,23 @@ Delete
 
 # 16. Interested Buyers
 
-Seller sees, per listing
-
-```
-Boiler · 3 interested
-
-Rahul · Mechanical · Second Year · 2 hours ago   [WhatsApp]
-
-Reserve   Mark Sold   Edit   Delete
-```
+Seller sees, per listing, every buyer who opened a chat and who currently
+holds it. Buyer sees items they contacted: "On hold for you", "Sold" or
+"Back on the marketplace".
 
 ---
 
-# 17. Reserve Flow
+# 17. Relist Flow
 
-Seller clicks Reserve → listing shows "Reserved", buyers can still message
-in case the deal falls through. Unreserve returns it to Available.
-
----
-
-# 18. Renew Flow
-
-Hidden (EXPIRED) listings appear at the top of the dashboard under
-"Are these still available?". Renew makes it Available and resets the clock.
+From the WhatsApp link or the dashboard "Hidden right now" card:
+Relist → AVAILABLE, hold cleared, 30-day clock reset.
 
 ---
 
-# 19. Sold Flow
+# 18. Sold Flow
 
-Seller clicks Mark Sold
-
-↓
-
-Optional: "Who bought it?" (from buyers who contacted)
-
-↓
-
-Listing removed from marketplace
-
-↓
-
-Other interested buyers are notified it's sold.
+Mark Sold (from the relist page, listing page or dashboard) → SOLD. Optional
+"who bought it?" defaults to the buyer who had it on hold.
 
 ---
 

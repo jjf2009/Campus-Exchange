@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, isNotNull } from "drizzle-orm";
+import { and, count, desc, eq, gte, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { listingContacts, listings, users } from "@/db/schema";
 
@@ -31,14 +31,16 @@ export async function countRecentContactsByBuyer(buyerId: string, since: Date) {
   return row?.count ?? 0;
 }
 
-export async function countReportsForListing(listingId: string) {
+/** Items this buyer currently has on hold (excluding `exceptListingId`). */
+export async function countActiveHolds(buyerId: string, exceptListingId: string) {
   const [row] = await db
     .select({ count: count() })
-    .from(listingContacts)
+    .from(listings)
     .where(
       and(
-        eq(listingContacts.listingId, listingId),
-        isNotNull(listingContacts.reportedUnavailableAt)
+        eq(listings.heldByUserId, buyerId),
+        eq(listings.status, "RESERVED"),
+        ne(listings.id, exceptListingId)
       )
     );
 
@@ -62,7 +64,7 @@ export async function getContactsForSeller(sellerId: string) {
       id: listingContacts.id,
       listingId: listingContacts.listingId,
       buyerId: listingContacts.buyerId,
-      reportedUnavailableAt: listingContacts.reportedUnavailableAt,
+      listingHeldBy: listings.heldByUserId,
       createdAt: listingContacts.createdAt,
       listingTitle: listings.title,
       listingPrice: listings.price,
@@ -87,7 +89,7 @@ export async function getContactsForBuyer(buyerId: string) {
     .select({
       id: listingContacts.id,
       listingId: listingContacts.listingId,
-      reportedUnavailableAt: listingContacts.reportedUnavailableAt,
+      listingHeldBy: listings.heldByUserId,
       createdAt: listingContacts.createdAt,
       listingTitle: listings.title,
       listingPrice: listings.price,
