@@ -25,7 +25,7 @@ export default async function ProfileSetupPage() {
           <CardTitle className="text-2xl">Complete your profile</CardTitle>
           <CardDescription>
             Tell other GEC students a bit about you. Your WhatsApp number is
-            only revealed after you accept a buyer.
+            shown only to signed-in GEC students who want to buy your items.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/app-url";
+import { ALLOWED_EMAIL_DOMAIN } from "@/lib/constants";
 
 export async function signInWithGoogle(next = "/marketplace") {
   const supabase = await createClient();
@@ -12,6 +13,8 @@ export async function signInWithGoogle(next = "/marketplace") {
     provider: "google",
     options: {
       redirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(next)}`,
+      // Hint only (Google pre-selects college accounts); enforced server-side.
+      queryParams: { hd: ALLOWED_EMAIL_DOMAIN },
     },
   });
 

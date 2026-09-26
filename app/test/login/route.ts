@@ -13,8 +13,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing email" }, { status: 400 });
   }
 
-  const next = url.searchParams.get("next") ?? "/marketplace";
-  const response = NextResponse.redirect(new URL(next, url.origin));
+  const nextParam = url.searchParams.get("next") ?? "/marketplace";
+  const next =
+    nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/marketplace";
+  // Relative redirect: in dev, request.url reports "localhost" even when the
+  // browser used 127.0.0.1, which would drop the cookie set below.
+  const response = new NextResponse(null, {
+    status: 307,
+    headers: { Location: next },
+  });
 
   response.cookies.set(
     E2E_TEST_COOKIE,

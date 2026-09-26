@@ -150,7 +150,7 @@ Student
 
 ↓
 
-Google Login
+Google Login (@gec.ac.in only)
 
 ↓
 
@@ -162,40 +162,30 @@ Marketplace
 
 ↓
 
-Browse Listings
-
-↓
-
 Open Listing
 
 ↓
 
-Request Item
+Chat on WhatsApp (one tap, pre-filled message)
 
 ↓
 
-Request Saved
+Seller notified: "Rahul is interested in Boiler"
 
 ↓
 
-Seller Dashboard Updated
+Students meet and pay offline
 
 ↓
 
-Seller Accepts
-
-↓
-
-Buyer Can View WhatsApp Number
-
-↓
-
-Buyer Contacts Seller
-
-↓
-
-Seller Marks Sold
+Seller marks Reserved → Sold
 ```
+
+> **Why no request/accept step?** v1 had no way to know when an item sold.
+> v2 added "request → seller accepts → number revealed", which fixed that but
+> made buyers wait on sellers who rarely came back to click Accept. The
+> contact flow removes the wait and instead keeps listings fresh on the
+> seller side (see §13).
 
 ---
 
@@ -400,17 +390,21 @@ Each listing has one status.
 
 AVAILABLE
 
-Currently visible.
+Visible. Buyers can chat.
 
-PENDING_APPROVAL
+RESERVED
 
-Seller accepted one buyer.
-
-Other requests locked.
+Visible with a "Reserved" badge. Seller is finalising with someone.
+Reversible if the deal falls through.
 
 SOLD
 
-Hidden from marketplace.
+Hidden from marketplace. Optionally records which buyer bought it.
+
+EXPIRED
+
+Hidden because the seller hasn't confirmed it's still available, or buyers
+reported it sold. The seller can renew it in one tap.
 
 ARCHIVED
 
@@ -418,40 +412,34 @@ Owner removed listing.
 
 ---
 
-# 13. Request Flow
+# 13. Contact Flow & Listing Freshness
 
-Student clicks
-
-Request Item
+Buyer clicks **Chat on WhatsApp**
 
 ↓
 
-Confirmation Dialog
+Contact recorded (one per buyer per listing, max 15 new sellers per day)
+
+↓
+
+WhatsApp opens with
 
 ```
-Do you want to request this item?
-
-Cancel
-
-Request
+Hi! I saw your Boiler (₹850) on GEC Exchange. Is it still available? <link>
 ```
 
 ↓
 
-Request Stored
+Seller gets an in-app notification
 
-↓
+**How we know an item is gone**
 
-Seller Dashboard Updated
-
-↓
-
-Buyer sees
-
-```
-Request Sent
-Waiting for seller.
-```
+- 48h after a buyer contacts the seller, the seller is asked "Still available?"
+  (Sold / Reserved / Still available).
+- Every listing shows "Confirmed available X days ago". At 14 days the seller
+  is asked, and at 21 days the listing is hidden.
+- Buyers who contacted the seller can tap "Report as sold". 2 reports hide it.
+- When marked sold, everyone else who asked is notified.
 
 ---
 
@@ -467,11 +455,11 @@ My Listings
 
 ↓
 
-Incoming Requests
+Interested Buyers
 
 ↓
 
-Sold Items
+"Are these still available?" prompts
 
 ↓
 
@@ -516,103 +504,49 @@ Delete
 
 ---
 
-# 16. Incoming Requests
+# 16. Interested Buyers
 
-Seller sees
+Seller sees, per listing
 
 ```
-Boiler
+Boiler · 3 interested
 
-3 Requests
+Rahul · Mechanical · Second Year · 2 hours ago   [WhatsApp]
 
-Rahul
-
-Mechanical
-
-Second Year
-
-Accept
-
-Reject
+Reserve   Mark Sold   Edit   Delete
 ```
-
-Seller chooses exactly ONE buyer.
 
 ---
 
-# 17. Accept Flow
+# 17. Reserve Flow
 
-Seller clicks
-
-Accept
-
-↓
-
-Listing Status
-
-PENDING_APPROVAL
-
-↓
-
-Buyer Request
-
-ACCEPTED
-
-↓
-
-Buyer Unlocks
-
-Seller Name
-
-Phone Number
-
-Open WhatsApp Button
-
-↓
-
-Other Requests
-
-Rejected
+Seller clicks Reserve → listing shows "Reserved", buyers can still message
+in case the deal falls through. Unreserve returns it to Available.
 
 ---
 
-# 18. Reject Flow
+# 18. Renew Flow
 
-Seller clicks Reject
-
-↓
-
-Request Status
-
-Rejected
-
-↓
-
-Buyer sees
-
-Seller rejected your request.
-
-Listing remains Available.
+Hidden (EXPIRED) listings appear at the top of the dashboard under
+"Are these still available?". Renew makes it Available and resets the clock.
 
 ---
 
 # 19. Sold Flow
 
-Seller and Buyer complete transaction offline.
-
-Seller returns
+Seller clicks Mark Sold
 
 ↓
 
-Dashboard
+Optional: "Who bought it?" (from buyers who contacted)
 
 ↓
 
-Mark as Sold
+Listing removed from marketplace
 
 ↓
 
-Listing removed.
+Other interested buyers are notified it's sold.
 
 ---
 

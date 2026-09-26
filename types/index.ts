@@ -1,10 +1,17 @@
 export type ListingStatus =
-  "AVAILABLE" | "PENDING_APPROVAL" | "SOLD" | "ARCHIVED";
+  "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED" | "EXPIRED";
 
 export type RequestStatus = "PENDING" | "ACCEPTED" | "REJECTED";
 
 export type NotificationType =
-  "NEW_REQUEST" | "REQUEST_ACCEPTED" | "REQUEST_REJECTED" | "LISTING_SOLD";
+  | "NEW_REQUEST"
+  | "REQUEST_ACCEPTED"
+  | "REQUEST_REJECTED"
+  | "LISTING_SOLD"
+  | "NEW_CONTACT"
+  | "CONFIRM_AVAILABILITY"
+  | "LISTING_EXPIRED"
+  | "LISTING_REPORTED";
 
 export interface NotificationData {
   href?: string;

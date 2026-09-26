@@ -14,6 +14,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       E2E_TEST_MODE: "true",
+      CRON_SECRET: "e2e-cron-secret",
     },
   },
   projects: [

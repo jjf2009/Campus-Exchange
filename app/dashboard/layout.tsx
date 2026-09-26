@@ -19,7 +19,7 @@ export default async function DashboardLayout({
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-muted-foreground">
-            Manage your listings, requests, and profile.
+            Manage your listings, interested buyers, and profile.
           </p>
         </div>
         <div className="grid gap-8 sm:grid-cols-[200px_1fr]">

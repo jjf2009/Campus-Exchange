@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, LayoutDashboard, Package, UserRound } from "lucide-react";
+import { LayoutDashboard, Package, UserRound, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/listings", label: "My Listings", icon: Package },
-  { href: "/dashboard/requests", label: "Requests", icon: Inbox },
+  { href: "/dashboard/requests", label: "Interested", icon: Users },
   { href: "/dashboard/profile", label: "Profile", icon: UserRound },
 ];
 

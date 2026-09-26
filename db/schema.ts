@@ -7,15 +7,17 @@ import {
   timestamp,
   pgEnum,
   index,
+  uniqueIndex,
   jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const listingStatusEnum = pgEnum("listing_status", [
   "AVAILABLE",
-  "PENDING_APPROVAL",
+  "RESERVED",
   "SOLD",
   "ARCHIVED",
+  "EXPIRED",
 ]);
 
 export const requestStatusEnum = pgEnum("request_status", [
@@ -29,6 +31,10 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "REQUEST_ACCEPTED",
   "REQUEST_REJECTED",
   "LISTING_SOLD",
+  "NEW_CONTACT",
+  "CONFIRM_AVAILABILITY",
+  "LISTING_EXPIRED",
+  "LISTING_REPORTED",
 ]);
 
 export const users = pgTable("users", {
@@ -61,6 +67,15 @@ export const listings = pgTable(
     condition: text("condition").notNull(),
     imageUrl: text("image_url"),
     status: listingStatusEnum("status").notNull().default("AVAILABLE"),
+    /** Last time the seller confirmed the item is still available. */
+    lastConfirmedAt: timestamp("last_confirmed_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    /** Set when the seller was asked "still available?"; cleared on confirm. */
+    nudgedAt: timestamp("nudged_at", { withTimezone: true }),
+    soldToUserId: uuid("sold_to_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -76,6 +91,37 @@ export const listings = pgTable(
   ]
 );
 
+/** A buyer tapped "Chat on WhatsApp" on a listing. One row per buyer per listing. */
+export const listingContacts = pgTable(
+  "listing_contacts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    listingId: uuid("listing_id")
+      .notNull()
+      .references(() => listings.id, { onDelete: "cascade" }),
+    buyerId: uuid("buyer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    reportedUnavailableAt: timestamp("reported_unavailable_at", {
+      withTimezone: true,
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("listing_contacts_listing_buyer_idx").on(
+      table.listingId,
+      table.buyerId
+    ),
+    index("listing_contacts_buyer_created_idx").on(
+      table.buyerId,
+      table.createdAt
+    ),
+  ]
+);
+
+/** Legacy request/accept flow. Kept for history; no longer written to. */
 export const purchaseRequests = pgTable(
   "purchase_requests",
   {
@@ -139,7 +185,22 @@ export const listingsRelations = relations(listings, ({ one, many }) => ({
     references: [users.id],
   }),
   purchaseRequests: many(purchaseRequests),
+  contacts: many(listingContacts),
 }));
+
+export const listingContactsRelations = relations(
+  listingContacts,
+  ({ one }) => ({
+    listing: one(listings, {
+      fields: [listingContacts.listingId],
+      references: [listings.id],
+    }),
+    buyer: one(users, {
+      fields: [listingContacts.buyerId],
+      references: [users.id],
+    }),
+  })
+);
 
 export const purchaseRequestsRelations = relations(
   purchaseRequests,
@@ -166,6 +227,7 @@ export type DbUser = typeof users.$inferSelect;
 export type NewDbUser = typeof users.$inferInsert;
 export type DbListing = typeof listings.$inferSelect;
 export type NewDbListing = typeof listings.$inferInsert;
+export type DbListingContact = typeof listingContacts.$inferSelect;
 export type DbPurchaseRequest = typeof purchaseRequests.$inferSelect;
 export type NewDbPurchaseRequest = typeof purchaseRequests.$inferInsert;
 export type DbNotification = typeof notifications.$inferSelect;

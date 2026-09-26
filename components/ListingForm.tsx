@@ -155,7 +155,7 @@ export function ListingForm({ mode, listing }: ListingFormProps) {
             value={category || null}
             onValueChange={(value) => setCategory(value ?? "")}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" aria-label="Category">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
@@ -174,7 +174,7 @@ export function ListingForm({ mode, listing }: ListingFormProps) {
             value={condition || null}
             onValueChange={(value) => setCondition(value ?? "")}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" aria-label="Condition">
               <SelectValue placeholder="Select condition" />
             </SelectTrigger>
             <SelectContent>

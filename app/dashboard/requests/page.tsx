@@ -1,184 +1,231 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ExternalLink, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
-import { RequestActions } from "@/components/RequestActions";
-import { RequestStatusBadge } from "@/components/StatusBadge";
+import { ListingActions } from "@/components/ListingActions";
+import { ListingStatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  getBuyerRequests,
-  getIncomingRequests,
-} from "@/db/queries/requests";
+  getContactsForBuyer,
+  getContactsForSeller,
+} from "@/db/queries/contacts";
 import { requireCompleteProfile } from "@/lib/auth";
 import { getCategoryImage } from "@/lib/constants";
+import { buildListingEnquiry, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
-import type { RequestStatus } from "@/types";
+import type { ListingStatus } from "@/types";
 
 function listingThumb(imageUrl: string | null, category: string) {
   return imageUrl?.startsWith("/") ? imageUrl : getCategoryImage(category);
 }
 
 export const metadata = {
-  title: "Requests",
+  title: "Interested buyers",
 };
 
-export default async function RequestsPage() {
+type SellerContact = Awaited<ReturnType<typeof getContactsForSeller>>[number];
+
+export default async function InterestedPage() {
   const user = await requireCompleteProfile();
   const [incoming, outgoing] = await Promise.all([
-    getIncomingRequests(user.id),
-    getBuyerRequests(user.id),
+    getContactsForSeller(user.id),
+    getContactsForBuyer(user.id),
   ]);
+
+  // One card per listing, with everyone who asked about it.
+  const byListing = new Map<string, SellerContact[]>();
+  for (const contact of incoming) {
+    if (contact.listingStatus === "ARCHIVED") continue;
+    const list = byListing.get(contact.listingId) ?? [];
+    list.push(contact);
+    byListing.set(contact.listingId, list);
+  }
 
   return (
     <Tabs defaultValue="incoming" className="space-y-4">
       <TabsList>
         <TabsTrigger value="incoming">
-          Incoming ({incoming.filter((r) => r.status === "PENDING").length})
+          Interested in mine ({byListing.size})
         </TabsTrigger>
-        <TabsTrigger value="outgoing">My requests ({outgoing.length})</TabsTrigger>
+        <TabsTrigger value="outgoing">I contacted ({outgoing.length})</TabsTrigger>
       </TabsList>
 
       <TabsContent value="incoming" className="space-y-3">
-        {incoming.length === 0 ? (
+        {byListing.size === 0 ? (
           <EmptyState
-            title="No incoming requests"
-            description="When someone requests your listings, they will show up here."
+            title="No interested buyers yet"
+            description="When someone taps Chat on WhatsApp on your listing, they'll show up here."
           />
         ) : (
-          incoming.map((request) => (
-            <Card key={request.id}>
-              <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
-                  <Image
-                    src={listingThumb(
-                      request.listingImageUrl,
-                      request.listingCategory
-                    )}
-                    alt={request.listingTitle}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
-                </div>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/listing/${request.listingId}`}
-                      className="font-semibold hover:text-primary"
-                    >
-                      {request.listingTitle}
-                    </Link>
-                    <RequestStatusBadge
-                      status={request.status as RequestStatus}
-                    />
+          [...byListing.values()].map((contacts) => {
+            const first = contacts[0];
+            const status = first.listingStatus as ListingStatus;
+            return (
+              <Card key={first.listingId}>
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
+                      <Image
+                        src={listingThumb(
+                          first.listingImageUrl,
+                          first.listingCategory
+                        )}
+                        alt={first.listingTitle}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          href={`/listing/${first.listingId}`}
+                          className="font-semibold hover:text-primary"
+                        >
+                          {first.listingTitle}
+                        </Link>
+                        <ListingStatusBadge status={status} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {formatPrice(first.listingPrice)} · {contacts.length}{" "}
+                        interested
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-sm">
-                    <span className="font-medium">{request.buyerName}</span>
-                    {request.buyerBranch ? ` · ${request.buyerBranch}` : ""}
-                    {request.buyerYear ? ` · ${request.buyerYear}` : ""}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatPrice(request.listingPrice)} ·{" "}
-                    {formatRelativeDate(request.createdAt)}
-                  </p>
-                </div>
-                <RequestActions
-                  requestId={request.id}
-                  canAct={
-                    request.status === "PENDING" &&
-                    request.listingStatus === "AVAILABLE"
-                  }
-                />
-              </CardContent>
-            </Card>
-          ))
+
+                  <ul className="divide-y rounded-lg border">
+                    {contacts.map((c) => (
+                      <li
+                        key={c.id}
+                        className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium">{c.buyerName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {[c.buyerBranch, c.buyerYear]
+                              .filter(Boolean)
+                              .join(" · ")}
+                            {" · "}
+                            {formatRelativeDate(c.createdAt)}
+                            {c.reportedUnavailableAt ? " · said it's sold" : ""}
+                          </p>
+                        </div>
+                        {c.buyerPhone ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            render={
+                              <a
+                                href={buildWhatsAppUrl(c.buyerPhone)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              />
+                            }
+                            nativeButton={false}
+                          >
+                            <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+                            WhatsApp
+                          </Button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <ListingActions
+                    listingId={first.listingId}
+                    status={status}
+                    buyers={contacts.map((c) => ({
+                      id: c.buyerId,
+                      name: c.buyerName,
+                    }))}
+                  />
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </TabsContent>
 
       <TabsContent value="outgoing" className="space-y-3">
         {outgoing.length === 0 ? (
           <EmptyState
-            title="No requests yet"
-            description="Browse the marketplace and request items you need."
+            title="You haven't contacted anyone yet"
+            description="Find something you need and tap Chat on WhatsApp."
             action={
               <Button render={<Link href="/marketplace" />} nativeButton={false}>
-              Go to marketplace
-            </Button>
+                Go to marketplace
+              </Button>
             }
           />
         ) : (
-          outgoing.map((request) => {
-            const showContact =
-              request.status === "ACCEPTED" && request.sellerPhone;
-            const whatsapp = request.sellerPhone
-              ? `https://wa.me/${request.sellerPhone.replace(/\D/g, "")}`
-              : null;
+          outgoing.map((c) => {
+            const status = c.listingStatus as ListingStatus;
+            const live = status === "AVAILABLE" || status === "RESERVED";
 
             return (
-              <Card key={request.id}>
+              <Card key={c.id}>
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <CardTitle className="text-base">
                       <Link
-                        href={`/listing/${request.listingId}`}
+                        href={`/listing/${c.listingId}`}
                         className="hover:text-primary"
                       >
-                        {request.listingTitle}
+                        {c.listingTitle}
                       </Link>
                     </CardTitle>
-                    <RequestStatusBadge
-                      status={request.status as RequestStatus}
-                    />
+                    <ListingStatusBadge status={status} />
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    {formatPrice(request.listingPrice)} · Seller:{" "}
-                    {request.sellerName} · {formatRelativeDate(request.createdAt)}
+                    {formatPrice(c.listingPrice)} · Seller: {c.sellerName} ·
+                    contacted {formatRelativeDate(c.createdAt)}
                   </p>
 
-                  {request.status === "PENDING" ? (
+                  {status === "SOLD" ? (
+                    <p className="text-sm">
+                      {c.soldToUserId === user.id
+                        ? "The seller marked this as sold to you. Enjoy!"
+                        : "This item has been sold."}
+                    </p>
+                  ) : null}
+                  {status === "EXPIRED" || status === "ARCHIVED" ? (
+                    <p className="text-sm text-muted-foreground">
+                      No longer listed.
+                    </p>
+                  ) : null}
+                  {status === "RESERVED" ? (
                     <p className="text-sm text-amber-700">
-                      Waiting for the seller to respond.
+                      Reserved for another buyer for now.
                     </p>
                   ) : null}
 
-                  {request.status === "REJECTED" ? (
-                    <p className="text-sm text-destructive">
-                      Seller rejected your request.
-                    </p>
-                  ) : null}
-
-                  {showContact ? (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                      <p className="text-sm font-semibold text-emerald-900">
-                        Contact unlocked
-                      </p>
-                      <p className="mt-1 text-sm text-emerald-800">
-                        {request.sellerName} · {request.sellerPhone}
-                      </p>
-                      {whatsapp ? (
-                        <Button
-                          size="sm"
-                          className="mt-3"
-                          render={
-                            <a
-                              href={whatsapp}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            />
-                          }
-                          nativeButton={false}
-                        >
-                          <MessageCircle className="mr-1.5 h-4 w-4" />
-                          Open WhatsApp
-                          <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-                        </Button>
-                      ) : null}
-                    </div>
+                  {live && c.sellerPhone ? (
+                    <Button
+                      size="sm"
+                      render={
+                        <a
+                          href={buildWhatsAppUrl(
+                            c.sellerPhone,
+                            buildListingEnquiry({
+                              id: c.listingId,
+                              title: c.listingTitle,
+                              price: c.listingPrice,
+                            })
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      }
+                      nativeButton={false}
+                    >
+                      <MessageCircle className="mr-1.5 h-4 w-4" />
+                      Open WhatsApp
+                    </Button>
                   ) : null}
                 </CardContent>
               </Card>

@@ -4,6 +4,18 @@ Version 1.0
 
 ---
 
+> **Update: contact flow.** The request/accept/reject flow described in
+> parts of this guide (`acceptRequest`, `rejectRequest`, `purchase_requests`)
+> has been replaced:
+>
+> - `actions/contacts.ts`: `contactSeller` (records a `listing_contacts` row,
+>   notifies the seller, returns a `wa.me` link) and `reportUnavailable`.
+> - `actions/listings.ts`: `setListingReserved`, `confirmAvailable`,
+>   `markListingSold(listingId, soldToUserId?)`.
+> - `app/api/cron/listings/route.ts`: daily job (see `vercel.json`) that nudges
+>   sellers and hides stale listings (`EXPIRED`), protected by `CRON_SECRET`.
+> - `purchase_requests` is kept for history only and is no longer written to.
+
 # Purpose
 
 This document defines the engineering standards, architecture decisions, coding conventions, and best practices for the entire codebase.

@@ -15,6 +15,9 @@ interface ListingCardProps {
   imageUrl?: string | null;
   sellerName?: string;
   createdAt: Date | string;
+  reserved?: boolean;
+  lastConfirmedAt?: Date | string;
+  contactCount?: number;
 }
 
 export function ListingCard({
@@ -26,6 +29,9 @@ export function ListingCard({
   imageUrl,
   sellerName,
   createdAt,
+  reserved = false,
+  lastConfirmedAt,
+  contactCount = 0,
 }: ListingCardProps) {
   const displayImage =
     imageUrl && imageUrl.startsWith("/")
@@ -42,6 +48,11 @@ export function ListingCard({
             className="object-cover transition-transform group-hover:scale-[1.02]"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
+          {reserved ? (
+            <Badge className="absolute left-2 top-2 border-amber-200 bg-amber-100 text-amber-800">
+              Reserved
+            </Badge>
+          ) : null}
         </div>
         <CardContent className="space-y-2 p-4">
           <div className="flex items-start justify-between gap-2">
@@ -61,8 +72,19 @@ export function ListingCard({
             </Badge>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            {sellerName ? <span>{sellerName}</span> : <span />}
-            <span>{formatRelativeDate(createdAt)}</span>
+            {sellerName ? (
+              <span>
+                {sellerName}
+                {contactCount > 0 ? ` · ${contactCount} interested` : ""}
+              </span>
+            ) : (
+              <span />
+            )}
+            <span>
+              {lastConfirmedAt
+                ? `Confirmed ${formatRelativeDate(lastConfirmedAt)}`
+                : formatRelativeDate(createdAt)}
+            </span>
           </div>
         </CardContent>
       </Card>

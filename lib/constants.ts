@@ -6,6 +6,24 @@ export const APP_DESCRIPTION =
 
 export const DEFAULT_PAGE_SIZE = 20;
 
+/** Only Google accounts on this domain may sign in. */
+export const ALLOWED_EMAIL_DOMAIN = "gec.ac.in";
+
+export function isAllowedEmail(email: string | null | undefined): boolean {
+  return Boolean(
+    email && email.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`)
+  );
+}
+
+/** Listing freshness rules (see app/api/cron/listings). */
+export const NUDGE_AFTER_CONTACT_HOURS = 48;
+export const NUDGE_AFTER_DAYS = 14;
+export const EXPIRE_AFTER_DAYS = 21;
+/** Distinct buyer "already sold?" reports that hide a listing. */
+export const REPORTS_TO_EXPIRE = 2;
+/** New sellers a buyer may contact per 24h (anti-scraping). */
+export const MAX_CONTACTS_PER_DAY = 15;
+
 export const BRANCHES: Branch[] = [
   "Computer",
   "Information Technology",

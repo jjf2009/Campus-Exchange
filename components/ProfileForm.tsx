@@ -210,8 +210,8 @@ export function ProfileForm({ user, redirectTo = "/marketplace" }: ProfileFormPr
           aria-describedby="phone-help"
         />
         <p id="phone-help" className="text-xs text-muted-foreground">
-          Exactly 10 digits. Only shared with a buyer after you accept their
-          request.
+          Exactly 10 digits. Shown to signed-in GEC students who tap Chat on
+          WhatsApp on your listings.
         </p>
         {errors.phone ? (
           <p className="text-xs text-destructive" role="alert">
