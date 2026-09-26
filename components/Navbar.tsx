@@ -24,6 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { BrowserNotifications } from "@/components/BrowserNotifications";
 import { formatRelativeDate } from "@/utils/formatDate";
+import { LogoMark } from "@/components/brand";
 import { APP_NAME } from "@/lib/constants";
 import type { NavbarNotificationSummary } from "@/types";
 
@@ -42,16 +43,16 @@ interface NavbarProps {
 export function Navbar({ user, notifications }: NavbarProps) {
   const unreadCount = notifications?.unreadCount ?? 0;
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
+    <header className="sticky top-0 z-40 border-b-2 border-ink bg-paper/95 backdrop-blur supports-backdrop-filter:bg-paper/85">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Link
           href={user ? "/marketplace" : "/"}
-          className="flex items-center gap-2"
+          className="group flex items-center gap-2.5"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-            GEC
-          </div>
-          <span className="hidden font-semibold sm:inline">{APP_NAME}</span>
+          <LogoMark className="transition-transform group-hover:rotate-3" />
+          <span className="hidden font-display text-lg font-extrabold tracking-tight sm:inline">
+            {APP_NAME}
+          </span>
         </Link>
 
         {user ? (
@@ -68,6 +69,7 @@ export function Navbar({ user, notifications }: NavbarProps) {
             </Button>
             <Button
               size="sm"
+              variant="lime"
               render={<Link href="/new-listing" />}
               nativeButton={false}
             >
@@ -81,12 +83,12 @@ export function Navbar({ user, notifications }: NavbarProps) {
             />
 
             <DropdownMenu>
-              <DropdownMenuTrigger className="relative inline-flex size-9 items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+              <DropdownMenuTrigger className="relative inline-flex size-9 items-center justify-center rounded-lg border-2 border-ink bg-card shadow-brutal-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 ? (
                   <Badge
-                    variant="default"
-                    className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[10px] leading-none"
+                    variant="pink"
+                    className="absolute -right-2 -top-2 h-5 min-w-5 rounded-full px-1 text-[10px] leading-none"
                   >
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </Badge>
@@ -149,7 +151,7 @@ export function Navbar({ user, notifications }: NavbarProps) {
             </DropdownMenu>
 
             <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex size-9 items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+              <DropdownMenuTrigger className="inline-flex size-9 items-center justify-center rounded-full border-2 border-ink outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src={user.avatarUrl ?? undefined}
@@ -203,8 +205,8 @@ export function Navbar({ user, notifications }: NavbarProps) {
             </DropdownMenu>
           </nav>
         ) : (
-          <Button render={<Link href="/login" />} nativeButton={false}>
-            Continue with Google
+          <Button variant="ink" render={<Link href="/login" />} nativeButton={false}>
+            Sign in
           </Button>
         )}
       </div>

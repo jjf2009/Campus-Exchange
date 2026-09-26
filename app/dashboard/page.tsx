@@ -45,13 +45,13 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {attention.length > 0 ? (
-        <Card className="border-amber-300 bg-amber-50/60">
+        <Card className="bg-sun">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BellRing className="h-4 w-4" />
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <BellRing className="size-5" />
               Are these still available?
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="font-medium text-ink/80">
               One tap keeps the marketplace accurate for everyone.
             </CardDescription>
           </CardHeader>
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
             {attention.map((listing) => (
               <div
                 key={listing.id}
-                className="space-y-2 rounded-lg border bg-background p-3"
+                className="space-y-3 rounded-lg border-2 border-ink bg-card p-3"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <Link
@@ -94,21 +94,25 @@ export default async function DashboardPage() {
           title="Active listings"
           value={stats.available}
           icon={<Package className="h-4 w-4" />}
+          className="bg-lime"
         />
         <StatCard
           title="Reserved"
           value={stats.reserved}
           icon={<Bookmark className="h-4 w-4" />}
+          className="bg-sun"
         />
         <StatCard
           title="Sold"
           value={stats.sold}
           icon={<ShoppingBag className="h-4 w-4" />}
+          className="bg-card"
         />
         <StatCard
           title="Interested buyers"
           value={liveContacts.length}
           icon={<Users className="h-4 w-4" />}
+          className="bg-pink"
         />
       </div>
 
@@ -120,7 +124,11 @@ export default async function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          <Button render={<Link href="/new-listing" />} nativeButton={false}>
+          <Button
+            variant="lime"
+            render={<Link href="/new-listing" />}
+            nativeButton={false}
+          >
             Create listing
           </Button>
           <Button
@@ -148,21 +156,21 @@ function StatCard({
   title,
   value,
   icon,
+  className,
 }: {
   title: string;
   value: number;
   icon: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <div className="text-muted-foreground">{icon}</div>
+    <Card className={className}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
+        <CardTitle className="text-sm font-bold text-ink">{title}</CardTitle>
+        <div className="text-ink">{icon}</div>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{value}</div>
+        <div className="font-display text-5xl font-extrabold">{value}</div>
       </CardContent>
     </Card>
   );

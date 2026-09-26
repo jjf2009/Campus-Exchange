@@ -69,6 +69,18 @@ export const CATEGORY_GROUPS = {
   Others: ["Others"] as Category[],
 } as const;
 
+export const CATEGORY_EMOJI: Record<Category, string> = {
+  Boiler: "🥼",
+  Bomber: "🧥",
+  Drafter: "📐",
+  Calculator: "🧮",
+  Mattress: "🛏️",
+  Cooler: "🧊",
+  Fan: "🌀",
+  Induction: "🍳",
+  Others: "📦",
+};
+
 /** Static images in /public — one per category (no user uploads). */
 export const CATEGORY_IMAGES: Record<Category, string> = {
   Boiler: "/Boiler_suit.jpg",

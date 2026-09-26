@@ -67,7 +67,7 @@ export default async function InterestedPage() {
               <Card key={first.listingId}>
                 <CardContent className="space-y-4 p-4">
                   <div className="flex items-center gap-4">
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 border-ink bg-muted">
                       <Image
                         src={listingThumb(
                           first.listingImageUrl,
@@ -96,7 +96,7 @@ export default async function InterestedPage() {
                     </div>
                   </div>
 
-                  <ul className="divide-y rounded-lg border">
+                  <ul className="divide-y-2 divide-ink rounded-lg border-2 border-ink">
                     {contacts.map((c) => (
                       <li
                         key={c.id}
@@ -199,7 +199,7 @@ export default async function InterestedPage() {
                     </p>
                   ) : null}
                   {status === "RESERVED" ? (
-                    <p className="text-sm text-amber-700">
+                    <p className="w-fit rounded-md border-2 border-ink bg-sun px-2 py-0.5 text-sm font-semibold">
                       Reserved for another buyer for now.
                     </p>
                   ) : null}

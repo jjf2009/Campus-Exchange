@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CATEGORIES } from "@/lib/constants";
+import { CATEGORIES, CATEGORY_EMOJI } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function CategoryFilter() {
@@ -23,7 +23,7 @@ export function CategoryFilter() {
   const options = ["all", ...CATEGORIES];
 
 return (
-  <div className="flex flex-wrap gap-2">
+  <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pt-1 pb-3 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
     {options.map((category) => {
       const isActive = active === category;
 
@@ -33,13 +33,15 @@ return (
           type="button"
           onClick={() => select(category)}
           className={cn(
-            "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
+            "shrink-0 rounded-full border-2 border-ink px-3.5 py-1.5 text-sm font-bold transition-all",
             isActive
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+              ? "bg-ink text-lime shadow-brutal-sm"
+              : "bg-card text-ink hover:-translate-y-0.5 hover:bg-lime hover:shadow-brutal-sm"
           )}
         >
-          {category === "all" ? "All" : category}
+          {category === "all"
+            ? "✺ All"
+            : `${CATEGORY_EMOJI[category as keyof typeof CATEGORY_EMOJI]} ${category}`}
         </button>
       );
     })}

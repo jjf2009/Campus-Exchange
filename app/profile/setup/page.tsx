@@ -19,10 +19,12 @@ export default async function ProfileSetupPage() {
   if (isProfileComplete(user)) redirect("/marketplace");
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-10">
-      <Card className="w-full max-w-lg shadow-md">
+    <div className="flex min-h-screen items-center justify-center bg-grid px-4 py-10">
+      <Card className="w-full max-w-lg shadow-brutal-lg">
         <CardHeader>
-          <CardTitle className="text-2xl">Complete your profile</CardTitle>
+          <CardTitle className="font-display text-3xl font-extrabold">
+            One last thing ✌️
+          </CardTitle>
           <CardDescription>
             Tell other GEC students a bit about you. Your WhatsApp number is
             shown only to signed-in GEC students who want to buy your items.

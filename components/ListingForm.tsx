@@ -189,7 +189,7 @@ export function ListingForm({ mode, listing }: ListingFormProps) {
 
         <div className="space-y-2">
           <Label>Photo</Label>
-          <div className="relative aspect-[4/3] overflow-hidden rounded-xl border bg-muted">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-xl border-2 border-ink bg-muted shadow-brutal-sm">
             {previewImage ? (
               <Image
                 src={previewImage}

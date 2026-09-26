@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { ListingCard } from "@/components/ListingCard";
 import { ListingGridSkeleton } from "@/components/ListingCardSkeleton";
 import { Navbar } from "@/components/Navbar";
+import { Sticker } from "@/components/brand";
 import { SearchBar } from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
 import { getMarketplaceListings } from "@/db/queries/listings";
@@ -33,24 +34,32 @@ export default async function MarketplacePage({
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar user={user} notifications={notifications} />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Marketplace</h1>
-            <p className="mt-1 text-muted-foreground">
-              Find used academic gear from fellow GEC students.
-            </p>
+      <section className="border-b-2 border-ink bg-grid">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-10 pb-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <Sticker color="pink" tilt={-3} className="mb-3 text-xs">
+                Marketplace
+              </Sticker>
+              <h1 className="font-display text-4xl leading-none font-extrabold tracking-tight sm:text-6xl">
+                What are you <span className="marker">hunting</span> for?
+              </h1>
+            </div>
+            <Button
+              variant="lime"
+              size="lg"
+              render={<Link href="/new-listing" />}
+              nativeButton={false}
+            >
+              <PlusCircle className="size-5" />
+              Sell an item
+            </Button>
           </div>
-          <Button render={<Link href="/new-listing" />} nativeButton={false}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Sell an item
-          </Button>
-        </div>
 
-        <div className="mb-6 space-y-4">
+          <div className="space-y-4">
           <Suspense
             fallback={
-              <div className="h-11 animate-pulse rounded-md bg-muted" />
+              <div className="h-14 animate-pulse rounded-xl border-2 border-ink bg-card" />
             }
           >
             <SearchBar placeholder="Search boiler, drafter, calculator…" />
@@ -60,8 +69,11 @@ export default async function MarketplacePage({
           >
             <CategoryFilter />
           </Suspense>
+          </div>
         </div>
+      </section>
 
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <Suspense fallback={<ListingGridSkeleton />}>
           <MarketplaceGrid
             search={params.q}
@@ -121,8 +133,12 @@ async function MarketplaceGrid({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-8">
+      <p className="font-display text-lg font-bold">
+        {total} {total === 1 ? "item" : "items"}
+        {search?.trim() ? ` for “${search.trim()}”` : ""} on the shelf
+      </p>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((item) => (
           <ListingCard
             key={item.id}
@@ -142,8 +158,8 @@ async function MarketplaceGrid({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border bg-background px-4 py-3">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between gap-3 rounded-xl border-2 border-ink bg-card px-4 py-3 shadow-brutal-sm">
+          <p className="text-sm font-bold">
             Page {pageNumber} of {totalPages}
           </p>
           <div className="flex items-center gap-2">

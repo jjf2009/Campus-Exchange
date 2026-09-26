@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants";
 import "./globals.css";
@@ -7,6 +7,12 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+});
+
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin"],
+  weight: ["500", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
@@ -30,10 +36,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} min-h-screen bg-background font-sans antialiased`}
       >
         {children}
-        <Toaster richColors position="top-center" />
+        <Toaster position="top-center" />
       </body>
     </html>
   );

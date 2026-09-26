@@ -60,7 +60,7 @@ export default async function MyListingsPage() {
         {items.map((item) => (
           <Card key={item.id}>
             <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-              <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-lg bg-muted sm:w-24">
+              <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-lg border-2 border-ink bg-muted sm:w-24">
                 <Image
                   src={
                     item.imageUrl?.startsWith("/")

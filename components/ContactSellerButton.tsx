@@ -32,11 +32,13 @@ export function ContactSellerButton({
   if (!available) {
     return (
       <div className="space-y-1">
-        <Button disabled className="w-full sm:w-auto" size="lg">
+        <Button disabled variant="outline" className="w-full" size="xl">
           Unavailable
         </Button>
         {unavailableReason ? (
-          <p className="text-sm text-muted-foreground">{unavailableReason}</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {unavailableReason}
+          </p>
         ) : null}
       </div>
     );
@@ -91,25 +93,26 @@ export function ContactSellerButton({
   return (
     <div className="space-y-2">
       <Button
-        size="lg"
-        className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+        size="xl"
+        variant="whatsapp"
+        className="w-full"
         onClick={handleContact}
         disabled={isPending}
       >
         {isPending ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="size-5 animate-spin" />
         ) : (
-          <MessageCircle className="mr-2 h-4 w-4" />
+          <MessageCircle className="size-5" />
         )}
         {contacted ? "Chat again on WhatsApp" : "Chat on WhatsApp"}
       </Button>
       {contacted ? (
         hasReported ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm font-medium text-muted-foreground">
             You reported this as sold. We&apos;ve asked the seller to confirm.
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm font-medium text-muted-foreground">
             Seller said it&apos;s gone?{" "}
             <button
               type="button"
@@ -122,7 +125,7 @@ export function ContactSellerButton({
           </p>
         )
       ) : (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm font-medium text-muted-foreground">
           Opens WhatsApp with a message about this item. Pay and pick up in
           person.
         </p>

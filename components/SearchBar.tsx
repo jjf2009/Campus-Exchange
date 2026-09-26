@@ -43,16 +43,16 @@ export function SearchBar({ placeholder = "Search items..." }: { placeholder?: s
 
   return (
     <div className="relative w-full">
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink" />
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="h-11 pl-9"
+        className="h-14 rounded-xl pl-12 text-base font-medium shadow-brutal md:text-base"
         aria-label="Search listings"
       />
       {isPending ? (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
           Searching…
         </span>
       ) : null}

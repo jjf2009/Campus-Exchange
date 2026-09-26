@@ -38,7 +38,7 @@ export default async function NewListingPage() {
         </Button>
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Sell an item</CardTitle>
+            <CardTitle className="font-display text-3xl font-extrabold">Sell your stuff 💸</CardTitle>
             <CardDescription>
               List equipment, books, or hostel gear for fellow GEC students.
             </CardDescription>

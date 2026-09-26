@@ -196,3 +196,29 @@ export async function getListingsNeedingAttention(sellerId: string) {
     )
     .orderBy(desc(listings.updatedAt));
 }
+
+/** Public numbers + a few recent items for the landing page ticker. */
+export async function getLandingStats() {
+  const [counts, recent] = await Promise.all([
+    db
+      .select({ status: listings.status, count: sql<number>`count(*)::int` })
+      .from(listings)
+      .where(inArray(listings.status, [...VISIBLE_STATUSES, "SOLD"]))
+      .groupBy(listings.status),
+    db
+      .select({ title: listings.title, price: listings.price })
+      .from(listings)
+      .where(inArray(listings.status, [...VISIBLE_STATUSES]))
+      .orderBy(desc(listings.createdAt))
+      .limit(12),
+  ]);
+
+  let live = 0;
+  let sold = 0;
+  for (const row of counts) {
+    if (row.status === "SOLD") sold += row.count;
+    else live += row.count;
+  }
+
+  return { live, sold, recent };
+}

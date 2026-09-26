@@ -65,7 +65,7 @@ export default async function EditListingPage({
         </Button>
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Edit listing</CardTitle>
+            <CardTitle className="font-display text-3xl font-extrabold">Edit listing</CardTitle>
             <CardDescription>
               Update details for {listing.title}.
             </CardDescription>

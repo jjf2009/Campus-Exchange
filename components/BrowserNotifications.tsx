@@ -88,7 +88,7 @@ export function BrowserNotifications({
 
   return (
     autoPrompt ? (
-      <div className="hidden sm:flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
+      <div className="hidden items-center gap-1.5 rounded-md border-2 border-ink bg-sun px-2 py-1 text-xs font-bold lg:flex">
         <BellRing className="h-3.5 w-3.5" />
         Notifications available
       </div>
