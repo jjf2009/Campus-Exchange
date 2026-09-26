@@ -3,22 +3,6 @@ export type ListingStatus =
 
 export type RequestStatus = "PENDING" | "ACCEPTED" | "REJECTED";
 
-export type NotificationType =
-  | "NEW_REQUEST"
-  | "REQUEST_ACCEPTED"
-  | "REQUEST_REJECTED"
-  | "LISTING_SOLD"
-  | "NEW_CONTACT"
-  | "CONFIRM_AVAILABILITY"
-  | "LISTING_EXPIRED"
-  | "LISTING_REPORTED";
-
-export interface NotificationData {
-  href?: string;
-  [key: string]:
-    string | number | boolean | null | undefined | NotificationData;
-}
-
 export type Branch =
   | "Computer"
   | "Information Technology"
@@ -76,33 +60,6 @@ export interface PurchaseRequest {
   status: RequestStatus;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface Notification {
-  id: string;
-  userId: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  data: NotificationData;
-  isRead: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface NavbarNotificationItem {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  href: string;
-  isRead: boolean;
-  createdAt: string;
-}
-
-export interface NavbarNotificationSummary {
-  unreadCount: number;
-  items: NavbarNotificationItem[];
 }
 
 export interface ListingWithSeller extends Listing {

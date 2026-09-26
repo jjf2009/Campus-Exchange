@@ -7,23 +7,23 @@ const listingStyles: Record<
 > = {
   AVAILABLE: {
     label: "Available",
-    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    className: "bg-lime text-ink",
   },
   RESERVED: {
-    label: "Reserved",
-    className: "bg-amber-100 text-amber-800 border-amber-200",
+    label: "On hold",
+    className: "bg-sun text-ink",
   },
   SOLD: {
     label: "Sold",
-    className: "bg-slate-100 text-slate-700 border-slate-200",
+    className: "bg-ink text-paper",
   },
   ARCHIVED: {
     label: "Archived",
-    className: "bg-slate-100 text-slate-500 border-slate-200",
+    className: "bg-muted text-muted-foreground",
   },
   EXPIRED: {
     label: "Hidden",
-    className: "bg-red-100 text-red-800 border-red-200",
+    className: "bg-pink text-ink",
   },
 };
 

@@ -15,12 +15,12 @@ export function isAllowedEmail(email: string | null | undefined): boolean {
   );
 }
 
-/** Listing freshness rules (see app/api/cron/listings). */
-export const NUDGE_AFTER_CONTACT_HOURS = 48;
-export const NUDGE_AFTER_DAYS = 14;
-export const EXPIRE_AFTER_DAYS = 21;
-/** Distinct buyer "already sold?" reports that hide a listing. */
-export const REPORTS_TO_EXPIRE = 2;
+/** Live listings nobody has touched in this many days are hidden (cron). */
+export const EXPIRE_AFTER_DAYS = 30;
+/** A hold ends and the item returns to the marketplace after this many days. */
+export const HOLD_EXPIRES_AFTER_DAYS = 7;
+/** Items one buyer can have on hold at the same time. */
+export const MAX_ACTIVE_HOLDS = 2;
 /** New sellers a buyer may contact per 24h (anti-scraping). */
 export const MAX_CONTACTS_PER_DAY = 15;
 
@@ -68,6 +68,18 @@ export const CATEGORY_GROUPS = {
   Hostel: ["Mattress", "Cooler", "Fan", "Induction"] as Category[],
   Others: ["Others"] as Category[],
 } as const;
+
+export const CATEGORY_EMOJI: Record<Category, string> = {
+  Boiler: "🥼",
+  Bomber: "🧥",
+  Drafter: "📐",
+  Calculator: "🧮",
+  Mattress: "🛏️",
+  Cooler: "🧊",
+  Fan: "🌀",
+  Induction: "🍳",
+  Others: "📦",
+};
 
 /** Static images in /public — one per category (no user uploads). */
 export const CATEGORY_IMAGES: Record<Category, string> = {

@@ -10,7 +10,6 @@ No online payments — students list items and buyers chat with the seller on Wh
 - **Tailwind CSS** + **shadcn/ui**
 - **Supabase** Auth (Google OAuth) + Storage
 - **PostgreSQL** via **Drizzle ORM**
-- **Resend** (optional email notifications)
 - **Playwright** for end-to-end testing
 - Deploy: **Vercel**
 
@@ -22,9 +21,10 @@ No online payments — students list items and buyers chat with the seller on Wh
 - Create / edit / soft-delete listings
 - Image upload to Supabase Storage
 - GEC-only login (`@gec.ac.in` Google accounts)
-- One-tap "Chat on WhatsApp" with a pre-filled message (rate-limited)
-- Reserve / unreserve, mark sold (optionally to a specific buyer)
-- Listing freshness: sellers are nudged to confirm availability, stale listings auto-hide, buyers can report sold items
+- One-tap "Chat on WhatsApp" that puts the item on hold and hides it from the marketplace
+- Relist link inside the WhatsApp message if the deal falls through
+- Holds auto-relist after 7 days unless marked sold
+- No notifications or emails; untouched listings quietly hide after 30 days
 - Mark item sold
 - Seller dashboard (overview, listings, interested buyers, profile)
 
@@ -76,9 +76,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (server only) |
 | `DATABASE_URL` | Postgres connection string |
 | `NEXT_PUBLIC_APP_URL` | App origin (`http://localhost:3000`) |
-| `RESEND_API_KEY` | Optional — "still available?" / "listing hidden" emails to sellers |
 | `CRON_SECRET` | Secret Vercel Cron sends to `/api/cron/listings` (set in Vercel project env) |
-| `E2E_TEST_MODE` | Enables test-only login + mock email transport |
+| `E2E_TEST_MODE` | Enables the test-only login route |
 
 ## Scripts
 
@@ -98,7 +97,6 @@ npm run test:e2e     # Playwright end-to-end tests
 Set `E2E_TEST_MODE=true` when running the Playwright suite. In that mode:
 
 - a test-only login route can set a session cookie for seeded demo users
-- email notifications are captured locally instead of calling Resend
 - contact, reserve/sell, report, and cron flows can be exercised safely
 
 ## Project structure
@@ -108,7 +106,7 @@ app/           # Routes (pages only)
 actions/       # Server Actions (mutations)
 components/    # UI components
 db/            # Schema, queries, migrations, seed
-lib/           # Auth, Supabase, validation, email
+lib/           # Auth, Supabase, validation, WhatsApp links
 types/         # Shared TypeScript types
 utils/         # Pure helpers
 docs/          # PRD, architecture, tasks
@@ -116,22 +114,29 @@ docs/          # PRD, architecture, tasks
 
 ## Core flow
 
+No notifications, and sellers never have to check the site.
+
 ```
 Student lists item
-  → Buyer taps "Chat on WhatsApp" (seller is notified)
-  → Students coordinate offline
-  → Seller marks it Reserved (reversible) and then Sold
-     └ everyone else who asked is told it's sold
+  → Buyer taps "Chat on WhatsApp"
+       ├ the item goes ON HOLD for that buyer (hidden from the marketplace)
+       └ WhatsApp opens with a pre-filled message to the seller:
+           "GEC Exchange has hidden this item while we talk. If it sells,
+            mark it sold here. Otherwise it comes back in 7 days: <link>/relist"
+  → Students meet on campus and pay in person
+  → Deal done: seller taps the link → "Mark as sold" (sign-in required)
+  → Deal fell through: nothing to do. It returns to the marketplace after
+    7 days, or the seller can relist it sooner from the same link
 ```
 
-### Keeping listings fresh
-
-A daily Vercel Cron (`vercel.json` → `/api/cron/listings`) keeps sold items off the marketplace:
-
-- **48h after a buyer makes contact**, or **14 days without confirmation**, the seller is asked
-  "Still available?" (notification + email) with one-tap Sold / Reserved / Still available.
-- **21 days without confirmation**, the listing is hidden. The seller can renew it in one tap.
-- **2 buyers who contacted the seller report "sold"**, and the listing is hidden until the seller renews it.
+- A buyer can have at most **2 items on hold** at once, and contact at most 15 new sellers a day.
+- If two buyers tap at the same moment, only one gets the hold. The other sees
+  "Someone is already talking to the seller".
+- **Daily Vercel Cron** (`vercel.json` → `/api/cron/listings`, protected by `CRON_SECRET`), no
+  notifications:
+  - holds older than **7 days** go back on the marketplace (unless marked sold)
+  - live listings nobody has touched in **30 days** are hidden (for items sold outside the app);
+    sellers can relist from their dashboard
 
 ## Docs
 

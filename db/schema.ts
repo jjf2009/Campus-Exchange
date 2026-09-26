@@ -67,12 +67,15 @@ export const listings = pgTable(
     condition: text("condition").notNull(),
     imageUrl: text("image_url"),
     status: listingStatusEnum("status").notNull().default("AVAILABLE"),
-    /** Last time the seller confirmed the item is still available. */
+    /** Last time the listing was created, edited or relisted. */
     lastConfirmedAt: timestamp("last_confirmed_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    /** Set when the seller was asked "still available?"; cleared on confirm. */
-    nudgedAt: timestamp("nudged_at", { withTimezone: true }),
+    /** Buyer who tapped "Chat on WhatsApp" and put the item on hold. */
+    heldByUserId: uuid("held_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    heldAt: timestamp("held_at", { withTimezone: true }),
     soldToUserId: uuid("sold_to_user_id").references(() => users.id, {
       onDelete: "set null",
     }),
@@ -88,6 +91,7 @@ export const listings = pgTable(
     index("listings_status_idx").on(table.status),
     index("listings_category_idx").on(table.category),
     index("listings_title_idx").on(table.title),
+    index("listings_held_by_user_id_idx").on(table.heldByUserId),
   ]
 );
 
@@ -102,9 +106,6 @@ export const listingContacts = pgTable(
     buyerId: uuid("buyer_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    reportedUnavailableAt: timestamp("reported_unavailable_at", {
-      withTimezone: true,
-    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

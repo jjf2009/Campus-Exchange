@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BellRing, Bookmark, Package, ShoppingBag, Users } from "lucide-react";
+import { Pin, Bookmark, Package, ShoppingBag, Users } from "lucide-react";
 import { ListingActions } from "@/components/ListingActions";
 import { ListingStatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,11 @@ import {
 } from "@/components/ui/card";
 import { getContactsForSeller } from "@/db/queries/contacts";
 import {
-  getListingsNeedingAttention,
+  getHeldListings,
   getSellerStats,
 } from "@/db/queries/listings";
 import { requireCompleteProfile } from "@/lib/auth";
+import { EXPIRE_AFTER_DAYS, HOLD_EXPIRES_AFTER_DAYS } from "@/lib/constants";
 import { formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
 import type { ListingStatus } from "@/types";
@@ -28,13 +29,10 @@ export default async function DashboardPage() {
   const user = await requireCompleteProfile();
   const [stats, attention, contacts] = await Promise.all([
     getSellerStats(user.id),
-    getListingsNeedingAttention(user.id),
+    getHeldListings(user.id),
     getContactsForSeller(user.id),
   ]);
 
-  const liveContacts = contacts.filter(
-    (c) => c.listingStatus === "AVAILABLE" || c.listingStatus === "RESERVED"
-  );
   const buyersByListing = new Map<string, { id: string; name: string }[]>();
   for (const c of contacts) {
     const list = buyersByListing.get(c.listingId) ?? [];
@@ -45,21 +43,22 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {attention.length > 0 ? (
-        <Card className="border-amber-300 bg-amber-50/60">
+        <Card className="bg-sun">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BellRing className="h-4 w-4" />
-              Are these still available?
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <Pin className="size-5" />
+              Hidden right now
             </CardTitle>
-            <CardDescription>
-              One tap keeps the marketplace accurate for everyone.
+            <CardDescription className="font-medium text-ink/80">
+              Sold? Mark it sold, or it comes back after{" "}
+              {HOLD_EXPIRES_AFTER_DAYS} days. Deal off? Relist it now.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {attention.map((listing) => (
               <div
                 key={listing.id}
-                className="space-y-2 rounded-lg border bg-background p-3"
+                className="space-y-3 rounded-lg border-2 border-ink bg-card p-3"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <Link
@@ -70,18 +69,17 @@ export default async function DashboardPage() {
                   </Link>
                   <ListingStatusBadge status={listing.status as ListingStatus} />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatPrice(listing.price)} · last confirmed{" "}
-                  {formatRelativeDate(listing.lastConfirmedAt)}
-                  {listing.contactCount > 0
-                    ? ` · ${listing.contactCount} interested`
-                    : ""}
+                <p className="text-xs font-medium text-muted-foreground">
+                  {formatPrice(listing.price)} ·{" "}
+                  {listing.status === "RESERVED" && listing.heldAt
+                    ? `on hold for ${listing.holderName ?? "a buyer"} since ${formatRelativeDate(listing.heldAt)}`
+                    : `hidden after ${EXPIRE_AFTER_DAYS} days without changes`}
                 </p>
                 <ListingActions
                   listingId={listing.id}
                   status={listing.status as ListingStatus}
                   buyers={buyersByListing.get(listing.id) ?? []}
-                  askToConfirm
+                  heldByUserId={listing.heldByUserId}
                 />
               </div>
             ))}
@@ -94,21 +92,25 @@ export default async function DashboardPage() {
           title="Active listings"
           value={stats.available}
           icon={<Package className="h-4 w-4" />}
+          className="bg-lime"
         />
         <StatCard
-          title="Reserved"
+          title="On hold"
           value={stats.reserved}
           icon={<Bookmark className="h-4 w-4" />}
+          className="bg-sun"
         />
         <StatCard
           title="Sold"
           value={stats.sold}
           icon={<ShoppingBag className="h-4 w-4" />}
+          className="bg-card"
         />
         <StatCard
-          title="Interested buyers"
-          value={liveContacts.length}
+          title="Buyers so far"
+          value={contacts.length}
           icon={<Users className="h-4 w-4" />}
+          className="bg-pink"
         />
       </div>
 
@@ -120,7 +122,11 @@ export default async function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          <Button render={<Link href="/new-listing" />} nativeButton={false}>
+          <Button
+            variant="lime"
+            render={<Link href="/new-listing" />}
+            nativeButton={false}
+          >
             Create listing
           </Button>
           <Button
@@ -135,8 +141,7 @@ export default async function DashboardPage() {
             render={<Link href="/dashboard/requests" />}
             nativeButton={false}
           >
-            Interested buyers
-            {liveContacts.length > 0 ? ` (${liveContacts.length})` : ""}
+            Buyers who messaged you
           </Button>
         </CardContent>
       </Card>
@@ -148,21 +153,21 @@ function StatCard({
   title,
   value,
   icon,
+  className,
 }: {
   title: string;
   value: number;
   icon: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <div className="text-muted-foreground">{icon}</div>
+    <Card className={className}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
+        <CardTitle className="text-sm font-bold text-ink">{title}</CardTitle>
+        <div className="text-ink">{icon}</div>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{value}</div>
+        <div className="font-display text-5xl font-extrabold">{value}</div>
       </CardContent>
     </Card>
   );

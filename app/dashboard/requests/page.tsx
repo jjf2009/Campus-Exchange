@@ -67,7 +67,7 @@ export default async function InterestedPage() {
               <Card key={first.listingId}>
                 <CardContent className="space-y-4 p-4">
                   <div className="flex items-center gap-4">
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 border-ink bg-muted">
                       <Image
                         src={listingThumb(
                           first.listingImageUrl,
@@ -96,7 +96,7 @@ export default async function InterestedPage() {
                     </div>
                   </div>
 
-                  <ul className="divide-y rounded-lg border">
+                  <ul className="divide-y-2 divide-ink rounded-lg border-2 border-ink">
                     {contacts.map((c) => (
                       <li
                         key={c.id}
@@ -110,7 +110,10 @@ export default async function InterestedPage() {
                               .join(" · ")}
                             {" · "}
                             {formatRelativeDate(c.createdAt)}
-                            {c.reportedUnavailableAt ? " · said it's sold" : ""}
+                            {c.listingStatus === "RESERVED" &&
+                            c.listingHeldBy === c.buyerId
+                              ? " · 📌 on hold for them"
+                              : ""}
                           </p>
                         </div>
                         {c.buyerPhone ? (
@@ -163,7 +166,9 @@ export default async function InterestedPage() {
         ) : (
           outgoing.map((c) => {
             const status = c.listingStatus as ListingStatus;
-            const live = status === "AVAILABLE" || status === "RESERVED";
+            const heldForMe =
+              status === "RESERVED" && c.listingHeldBy === user.id;
+            const live = heldForMe;
 
             return (
               <Card key={c.id}>
@@ -198,9 +203,24 @@ export default async function InterestedPage() {
                       No longer listed.
                     </p>
                   ) : null}
-                  {status === "RESERVED" ? (
-                    <p className="text-sm text-amber-700">
-                      Reserved for another buyer for now.
+                  {status === "AVAILABLE" ? (
+                    <p className="text-sm font-medium">
+                      Back on the marketplace.{" "}
+                      <Link
+                        href={`/listing/${c.listingId}`}
+                        className="underline underline-offset-2"
+                      >
+                        Open it to chat again
+                      </Link>
+                    </p>
+                  ) : null}
+                  {heldForMe ? (
+                    <p className="w-fit rounded-md border-2 border-ink bg-lime px-2 py-0.5 text-sm font-semibold">
+                      📌 On hold for you. Hidden from everyone else.
+                    </p>
+                  ) : status === "RESERVED" ? (
+                    <p className="w-fit rounded-md border-2 border-ink bg-sun px-2 py-0.5 text-sm font-semibold">
+                      Someone else is talking to the seller right now.
                     </p>
                   ) : null}
 

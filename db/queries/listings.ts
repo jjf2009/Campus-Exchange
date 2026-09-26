@@ -1,12 +1,10 @@
 import {
   and,
-  asc,
   count,
   desc,
   eq,
   ilike,
   inArray,
-  isNotNull,
   ne,
   or,
   sql,
@@ -15,13 +13,11 @@ import { db } from "@/db";
 import { listings, users } from "@/db/schema";
 import type { Category } from "@/types";
 
-/** Statuses buyers can see and contact on the marketplace. */
-export const VISIBLE_STATUSES = ["AVAILABLE", "RESERVED"] as const;
-
-const contactCount = sql<number>`(
-  select count(*)::int from listing_contacts lc
-  where lc.listing_id = ${listings.id}
-)`;
+/**
+ * Statuses buyers can see and contact on the marketplace. RESERVED means
+ * "on hold": a buyer tapped Chat on WhatsApp and the item hid itself.
+ */
+export const VISIBLE_STATUSES = ["AVAILABLE"] as const;
 
 export async function getMarketplaceListings(options?: {
   search?: string;
@@ -54,7 +50,6 @@ export async function getMarketplaceListings(options?: {
       imageUrl: listings.imageUrl,
       status: listings.status,
       lastConfirmedAt: listings.lastConfirmedAt,
-      contactCount,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
       sellerName: users.name,
@@ -65,11 +60,7 @@ export async function getMarketplaceListings(options?: {
     .from(listings)
     .innerJoin(users, eq(listings.sellerId, users.id))
     .where(and(...conditions))
-    // Reserved items sink below available ones.
-    .orderBy(
-      asc(sql`${listings.status} = 'RESERVED'`),
-      desc(listings.createdAt)
-    );
+    .orderBy(desc(listings.createdAt));
 
   const totalQuery = db
     .select({ count: count() })
@@ -99,8 +90,9 @@ export async function getListingById(id: string) {
       condition: listings.condition,
       imageUrl: listings.imageUrl,
       status: listings.status,
+      heldByUserId: listings.heldByUserId,
+      heldAt: listings.heldAt,
       lastConfirmedAt: listings.lastConfirmedAt,
-      contactCount,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
       sellerName: users.name,
@@ -127,11 +119,13 @@ export async function getListingsBySeller(sellerId: string) {
       imageUrl: listings.imageUrl,
       status: listings.status,
       lastConfirmedAt: listings.lastConfirmedAt,
-      nudgedAt: listings.nudgedAt,
-      contactCount,
+      heldAt: listings.heldAt,
+      heldByUserId: listings.heldByUserId,
+      holderName: users.name,
       createdAt: listings.createdAt,
     })
     .from(listings)
+    .leftJoin(users, eq(listings.heldByUserId, users.id))
     .where(
       and(eq(listings.sellerId, sellerId), ne(listings.status, "ARCHIVED"))
     )
@@ -167,32 +161,52 @@ export async function getSellerStats(sellerId: string) {
   return stats;
 }
 
-/**
- * Seller listings waiting on a "still available?" answer: nudged by the
- * cron job, or hidden after expiring / being reported.
- */
-export async function getListingsNeedingAttention(sellerId: string) {
+/** Seller listings hidden right now: on hold for a buyer, or expired. */
+export async function getHeldListings(sellerId: string) {
   return db
     .select({
       id: listings.id,
       title: listings.title,
       price: listings.price,
       status: listings.status,
+      heldAt: listings.heldAt,
+      heldByUserId: listings.heldByUserId,
+      holderName: users.name,
       lastConfirmedAt: listings.lastConfirmedAt,
-      contactCount,
     })
     .from(listings)
+    .leftJoin(users, eq(listings.heldByUserId, users.id))
     .where(
       and(
         eq(listings.sellerId, sellerId),
-        or(
-          eq(listings.status, "EXPIRED"),
-          and(
-            inArray(listings.status, [...VISIBLE_STATUSES]),
-            isNotNull(listings.nudgedAt)
-          )
-        )
+        inArray(listings.status, ["RESERVED", "EXPIRED"])
       )
     )
     .orderBy(desc(listings.updatedAt));
+}
+
+/** Public numbers + a few recent items for the landing page ticker. */
+export async function getLandingStats() {
+  const [counts, recent] = await Promise.all([
+    db
+      .select({ status: listings.status, count: sql<number>`count(*)::int` })
+      .from(listings)
+      .where(inArray(listings.status, ["AVAILABLE", "SOLD"]))
+      .groupBy(listings.status),
+    db
+      .select({ title: listings.title, price: listings.price })
+      .from(listings)
+      .where(inArray(listings.status, [...VISIBLE_STATUSES]))
+      .orderBy(desc(listings.createdAt))
+      .limit(12),
+  ]);
+
+  let live = 0;
+  let sold = 0;
+  for (const row of counts) {
+    if (row.status === "SOLD") sold += row.count;
+    else live += row.count;
+  }
+
+  return { live, sold, recent };
 }

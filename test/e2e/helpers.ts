@@ -35,11 +35,7 @@ export async function resetE2EDatabase() {
   ]);
 }
 
-export async function resetE2EEmailEvents(baseURL = "http://127.0.0.1:3000") {
-  await fetch(`${baseURL}/api/e2e/email-events`, { method: "DELETE" });
-}
-
-export async function seedE2EListing() {
+export async function seedE2EListing(title = "E2E Test Boiler") {
   const [seller] = await db
     .select()
     .from(users)
@@ -52,7 +48,7 @@ export async function seedE2EListing() {
     .insert(listings)
     .values({
       sellerId: seller.id,
-      title: "E2E Test Boiler",
+      title,
       description: "Listing created for automated end-to-end testing.",
       price: 750,
       category: "Boiler",
@@ -84,11 +80,6 @@ export async function getE2EContactsForListing(listingId: string) {
   return db.select().from(listingContacts).where(eq(listingContacts.listingId, listingId));
 }
 
-export async function getE2ENotifications(userId: string, type?: string) {
-  const rows = await db.select().from(notifications).where(eq(notifications.userId, userId));
-  return type ? rows.filter((row) => row.type === type) : rows;
-}
-
 /** Give a buyer `n` contacts made just now on throwaway listings. */
 export async function seedE2EContacts(buyerId: string, n: number) {
   const seller = await getE2EUserByEmail("seller.demo@gec.ac.in");
@@ -110,29 +101,21 @@ export async function seedE2EContacts(buyerId: string, n: number) {
   await db.insert(listingContacts).values(created.map((l) => ({ listingId: l.id, buyerId })));
 }
 
-export async function backdateE2EListing(
-  listingId: string,
-  fields: { lastConfirmedDaysAgo?: number; contactsHoursAgo?: number }
-) {
-  if (fields.lastConfirmedDaysAgo !== undefined) {
-    await db
-      .update(listings)
-      .set({ lastConfirmedAt: new Date(Date.now() - fields.lastConfirmedDaysAgo * 86_400_000) })
-      .where(eq(listings.id, listingId));
-  }
-  if (fields.contactsHoursAgo !== undefined) {
-    await db
-      .update(listingContacts)
-      .set({ createdAt: new Date(Date.now() - fields.contactsHoursAgo * 3_600_000) })
-      .where(eq(listingContacts.listingId, listingId));
-  }
+export async function backdateE2EListing(listingId: string, daysAgo: number) {
+  await db
+    .update(listings)
+    .set({ lastConfirmedAt: new Date(Date.now() - daysAgo * 86_400_000) })
+    .where(eq(listings.id, listingId));
 }
 
-export async function getE2ENotificationCount(userId: string) {
-  const rows = await db
-    .select({ id: notifications.id })
-    .from(notifications)
-    .where(eq(notifications.userId, userId));
+export async function backdateE2EHold(listingId: string, daysAgo: number) {
+  await db
+    .update(listings)
+    .set({ heldAt: new Date(Date.now() - daysAgo * 86_400_000) })
+    .where(eq(listings.id, listingId));
+}
 
+export async function getE2ENotificationCount() {
+  const rows = await db.select({ id: notifications.id }).from(notifications);
   return rows.length;
 }

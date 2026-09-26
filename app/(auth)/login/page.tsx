@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { LogoMark, Sticker } from "@/components/brand";
 import { ALLOWED_EMAIL_DOMAIN, APP_NAME } from "@/lib/constants";
 
 export const metadata = {
@@ -23,16 +24,23 @@ export default async function LoginPage({
   const next = params.next ?? "/marketplace";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md shadow-md">
+    <div className="flex min-h-screen items-center justify-center bg-grid px-4">
+      <Card className="relative w-full max-w-md overflow-visible shadow-brutal-lg">
+        <Sticker
+          color="pink"
+          tilt={8}
+          wiggle
+          className="absolute -top-4 -right-3 text-xs"
+        >
+          GEC only ★
+        </Sticker>
         <CardHeader className="text-center">
-          <Link
-            href="/"
-            className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground"
-          >
-            GEC
+          <Link href="/" className="mx-auto mb-3" aria-label="Home">
+            <LogoMark className="h-12 w-16 text-lg" />
           </Link>
-          <CardTitle className="text-2xl">Welcome to {APP_NAME}</CardTitle>
+          <CardTitle className="font-display text-3xl font-extrabold">
+            Welcome to {APP_NAME}
+          </CardTitle>
           <CardDescription>
             Sign in with your @{ALLOWED_EMAIL_DOMAIN} Google account to buy and
             sell campus essentials.
@@ -40,7 +48,7 @@ export default async function LoginPage({
         </CardHeader>
         <CardContent className="space-y-4">
           {params.error ? (
-            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">
+            <p className="rounded-lg border-2 border-ink bg-pink px-3 py-2 text-center text-sm font-semibold text-ink">
               {params.error === "domain"
                 ? `Please sign in with your @${ALLOWED_EMAIL_DOMAIN} college account.`
                 : "Sign-in failed. Please try again."}
@@ -52,7 +60,7 @@ export default async function LoginPage({
               await signInWithGoogle(next);
             }}
           >
-            <Button type="submit" size="lg" className="w-full">
+            <Button type="submit" size="xl" variant="lime" className="w-full">
               <GoogleIcon />
               Continue with Google
             </Button>

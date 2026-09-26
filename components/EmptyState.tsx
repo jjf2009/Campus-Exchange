@@ -15,13 +15,15 @@ export function EmptyState({
   icon,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/30 px-6 py-16 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        {icon ?? <PackageOpen className="h-7 w-7" />}
+    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-ink bg-dots px-6 py-16 text-center">
+      <div className="mb-5 flex h-16 w-16 -rotate-6 items-center justify-center rounded-xl border-2 border-ink bg-sun text-ink shadow-brutal">
+        {icon ?? <PackageOpen className="h-8 w-8" />}
       </div>
-      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      <h3 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+        {title}
+      </h3>
       {description ? (
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+        <p className="mt-2 max-w-sm font-medium text-muted-foreground">
           {description}
         </p>
       ) : null}

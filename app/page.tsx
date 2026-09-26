@@ -1,18 +1,37 @@
+import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  BookOpen,
-  Calculator,
-  MessageCircle,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { redirect } from "next/navigation";
+import { ArrowRight, MessageCircle, Search, Handshake } from "lucide-react";
+import { Marquee, Sticker } from "@/components/brand";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { getLandingStats } from "@/db/queries/listings";
 import { getCurrentUser } from "@/lib/auth";
-import { APP_NAME } from "@/lib/constants";
-import { redirect } from "next/navigation";
+import {
+  APP_NAME,
+  CATEGORIES,
+  CATEGORY_EMOJI,
+  getCategoryImage,
+} from "@/lib/constants";
+import { formatPrice } from "@/utils/formatPrice";
+
+const FALLBACK_TICKER = [
+  "Drafter · ₹600",
+  "Boiler suit · ₹450",
+  "Casio fx-991 · ₹700",
+  "Hostel mattress · ₹900",
+  "Table fan · ₹500",
+];
+
+async function loadStats() {
+  try {
+    return await getLandingStats();
+  } catch (error) {
+    console.error("Landing stats unavailable:", error);
+    return { live: 0, sold: 0, recent: [] };
+  }
+}
 
 export default async function LandingPage() {
   const user = await getCurrentUser();
@@ -20,80 +39,199 @@ export default async function LandingPage() {
     redirect("/marketplace");
   }
 
+  const stats = await loadStats();
+  const ticker =
+    stats.recent.length >= 3
+      ? stats.recent.map((l) => `${l.title} · ${formatPrice(l.price)}`)
+      : FALLBACK_TICKER;
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-clip">
       <Navbar />
       <main className="flex-1">
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 text-sm text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              Only for Goa College of Engineering
-            </div>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Buy & sell campus essentials{" "}
-              <span className="text-primary">the GEC way</span>
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground sm:text-xl">
-              {APP_NAME} connects seniors with juniors for boilers, drafters,
-              calculators, books, and hostel gear — no online payments, just
-              a WhatsApp chat.
-            </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button size="lg" className="w-full sm:w-auto" render={<Link href="/login" />} nativeButton={false}>
-              Continue with Google
-                  <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto" render={<Link href="/login" />} nativeButton={false}>
-              Browse Marketplace
-            </Button>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-y bg-muted/30">
-          <div className="mx-auto grid max-w-6xl gap-6 px-4 py-14 sm:grid-cols-3">
-            <Feature
-              icon={<BookOpen className="h-5 w-5" />}
-              title="List in minutes"
-              description="Snap a photo, set a price, and publish to the campus marketplace."
-            />
-            <Feature
-              icon={<MessageCircle className="h-5 w-5" />}
-              title="Chat instantly"
-              description="Tap Chat on WhatsApp and message the seller straight away. No waiting for approval."
-            />
-            <Feature
-              icon={<ShieldCheck className="h-5 w-5" />}
-              title="Trusted campus only"
-              description="Only @gec.ac.in accounts can sign in, and stale listings are hidden automatically."
-            />
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-center text-2xl font-bold sm:text-3xl">
-            Built for what GEC students actually sell
-          </h2>
-          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              "Boiler",
-              "Bomber",
-              "Drafter",
-              "Calculator",
-              "Books",
-              "Laptop",
-              "Hostel Chair",
-              "Drawing Kit",
-            ].map((item) => (
-              <div
-                key={item}
-                className="flex items-center gap-2 rounded-xl border bg-card p-4 text-sm font-medium shadow-sm"
-              >
-                <Calculator className="h-4 w-4 text-primary" />
-                {item}
+        {/* HERO */}
+        <section className="relative bg-grid">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.15fr_1fr]">
+            <div className="animate-pop-in">
+              <Sticker color="pink" tilt={-3} className="mb-6">
+                ★ Only for Goa College of Engineering
+              </Sticker>
+              <h1 className="font-display text-[3.2rem] leading-[0.92] font-extrabold tracking-tight sm:text-7xl lg:text-[5.5rem]">
+                Seniors sell.
+                <br />
+                <span className="marker">Juniors save.</span>
+              </h1>
+              <p className="mt-6 max-w-lg text-lg font-medium text-muted-foreground sm:text-xl">
+                Boilers, drafters, calculators, mattresses: grab last
+                year&apos;s gear for a fraction of the price. One tap and
+                you&apos;re chatting with the senior on WhatsApp.
+              </p>
+              <div className="mt-9 flex flex-col gap-4 sm:flex-row">
+                <Button
+                  size="xl"
+                  variant="lime"
+                  render={<Link href="/login" />}
+                  nativeButton={false}
+                >
+                  Start browsing
+                  <ArrowRight className="size-5" />
+                </Button>
+                <Button
+                  size="xl"
+                  variant="outline"
+                  render={<Link href="/login?next=/new-listing" />}
+                  nativeButton={false}
+                >
+                  Sell your stuff
+                </Button>
               </div>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Sticker color="paper" tilt={2}>
+                  ₹0 fees
+                </Sticker>
+                <Sticker color="sun" tilt={-2}>
+                  No bargaining by email
+                </Sticker>
+                <Sticker color="paper" tilt={3}>
+                  @gec.ac.in only
+                </Sticker>
+              </div>
+            </div>
+
+            {/* Polaroid stack */}
+            <div className="relative mx-auto hidden h-[440px] w-full max-w-md sm:block">
+              <HeroCard
+                category="Drafter"
+                title="Mini drafter"
+                price={600}
+                className="top-4 left-0 -rotate-6"
+              />
+              <HeroCard
+                category="Calculator"
+                title="Casio fx-991ES"
+                price={700}
+                className="top-24 right-0 rotate-6"
+              />
+              <HeroCard
+                category="Boiler"
+                title="Boiler suit (M)"
+                price={450}
+                className="bottom-0 left-16 -rotate-2"
+              />
+              <Sticker
+                color="pink"
+                tilt={12}
+                wiggle
+                className="absolute top-0 right-6 z-20 text-base"
+              >
+                📌 Held for you
+              </Sticker>
+            </div>
+          </div>
+        </section>
+
+        <Marquee items={ticker.map((t) => `Just listed: ${t}`)} />
+
+        {/* STATS */}
+        <section className="mx-auto grid max-w-6xl gap-5 px-4 py-16 sm:grid-cols-3">
+          <StatBlock
+            value={stats.live > 0 ? String(stats.live) : "New"}
+            label={stats.live > 0 ? "items live right now" : "drops every week"}
+            className="bg-lime"
+          />
+          <StatBlock
+            value={stats.sold > 0 ? String(stats.sold) : "₹1000s"}
+            label={
+              stats.sold === 1
+                ? "deal done on campus"
+                : stats.sold > 1
+                  ? "deals done on campus"
+                  : "saved by juniors"
+            }
+            className="bg-sun"
+          />
+          <StatBlock value="1 tap" label="to chat with the seller" className="bg-pink" />
+        </section>
+
+        {/* HOW IT WORKS */}
+        <section className="border-y-2 border-ink bg-primary py-16 text-primary-foreground">
+          <div className="mx-auto max-w-6xl px-4">
+            <h2 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+              How it works
+            </h2>
+            <div className="mt-10 grid gap-6 sm:grid-cols-3">
+              <Step
+                n={1}
+                icon={<Search className="size-6" />}
+                title="Find it"
+                body="Search by what you need: boiler, drafter, calculator, fan."
+              />
+              <Step
+                n={2}
+                icon={<MessageCircle className="size-6" />}
+                title="Tap WhatsApp"
+                body="WhatsApp opens with the message ready. The item hides from everyone else while you talk."
+              />
+              <Step
+                n={3}
+                icon={<Handshake className="size-6" />}
+                title="Meet on campus"
+                body="Canteen, library, hostel gate. Check it, pay, done."
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* CATEGORIES */}
+        <section className="mx-auto max-w-6xl px-4 py-16">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <h2 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+              What&apos;s on the shelf
+            </h2>
+            <Sticker color="lime" tilt={-3}>
+              Built for GEC
+            </Sticker>
+          </div>
+          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {CATEGORIES.filter((c) => c !== "Others").map((category) => (
+              <Link
+                key={category}
+                href={`/marketplace?category=${category}`}
+                className="group overflow-hidden rounded-xl border-2 border-ink bg-card shadow-brutal press"
+              >
+                <div className="relative aspect-[4/3] border-b-2 border-ink bg-muted">
+                  <Image
+                    src={getCategoryImage(category)}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+                <div className="flex items-center justify-between px-3 py-2.5 font-display font-bold">
+                  <span>{category}</span>
+                  <span aria-hidden>{CATEGORY_EMOJI[category]}</span>
+                </div>
+              </Link>
             ))}
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="border-t-2 border-ink bg-lime">
+          <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-16 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="max-w-xl font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Your senior&apos;s drafter is waiting.
+            </h2>
+            <Button
+              size="xl"
+              variant="ink"
+              render={<Link href="/login" />}
+              nativeButton={false}
+            >
+              Join {APP_NAME}
+              <ArrowRight className="size-5" />
+            </Button>
           </div>
         </section>
       </main>
@@ -102,22 +240,80 @@ export default async function LandingPage() {
   );
 }
 
-function Feature({
-  icon,
+function HeroCard({
+  category,
   title,
-  description,
+  price,
+  className,
 }: {
-  icon: React.ReactNode;
+  category: string;
   title: string;
-  description: string;
+  price: number;
+  className?: string;
 }) {
   return (
-    <div className="rounded-xl border bg-background p-6 shadow-sm">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        {icon}
+    <div
+      className={`absolute w-56 rounded-xl border-2 border-ink bg-card p-2.5 shadow-brutal-lg ${className}`}
+    >
+      <div className="relative aspect-square overflow-hidden rounded-lg border-2 border-ink bg-muted">
+        <Image
+          src={getCategoryImage(category)}
+          alt=""
+          fill
+          sizes="224px"
+          className="object-cover"
+        />
       </div>
-      <h3 className="font-semibold">{title}</h3>
-      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+      <div className="mt-2 flex items-center justify-between gap-2 px-1">
+        <span className="truncate font-display font-bold">{title}</span>
+        <Sticker color="lime" tilt={-4} className="text-xs">
+          {formatPrice(price)}
+        </Sticker>
+      </div>
+    </div>
+  );
+}
+
+function StatBlock({
+  value,
+  label,
+  className,
+}: {
+  value: string;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`rounded-xl border-2 border-ink p-6 text-ink shadow-brutal ${className}`}
+    >
+      <p className="font-display text-5xl font-extrabold tracking-tight">
+        {value}
+      </p>
+      <p className="mt-1 font-semibold">{label}</p>
+    </div>
+  );
+}
+
+function Step({
+  n,
+  icon,
+  title,
+  body,
+}: {
+  n: number;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="relative rounded-xl border-2 border-ink bg-card p-6 text-ink shadow-brutal-lg">
+      <span className="absolute -top-5 -left-3 flex size-11 -rotate-6 items-center justify-center rounded-lg border-2 border-ink bg-sun font-display text-xl font-extrabold">
+        {n}
+      </span>
+      <div className="mb-3 flex justify-end text-primary">{icon}</div>
+      <h3 className="font-display text-2xl font-extrabold">{title}</h3>
+      <p className="mt-2 font-medium text-muted-foreground">{body}</p>
     </div>
   );
 }

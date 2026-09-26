@@ -1,13 +1,13 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import {
+  backdateE2EHold,
   backdateE2EListing,
   getE2EContactsForListing,
   getE2EListingById,
   getE2EListingByTitle,
-  getE2ENotifications,
+  getE2ENotificationCount,
   getE2EUserByEmail,
   resetE2EDatabase,
-  resetE2EEmailEvents,
   seedE2EContacts,
   seedE2EListing,
 } from "./helpers";
@@ -32,11 +32,12 @@ async function loginAs(browser: Browser, email: string, next: string) {
   return page;
 }
 
+/** Tap "Chat on WhatsApp" and return the WhatsApp URL the new tab lands on. */
 async function chatOnWhatsApp(page: Page) {
   const popupPromise = page.waitForEvent("popup");
-  await page.getByRole("button", { name: /Chat (again )?on WhatsApp/ }).click();
+  await page.getByRole("button", { name: /Chat on WhatsApp|Open WhatsApp again/ }).click();
   const popup = await popupPromise;
-  await popup.waitForURL(/wa\.me/);
+  await popup.waitForURL(/wa\.me|\/listing\//);
   const url = popup.url();
   await popup.close();
   return url;
@@ -46,7 +47,6 @@ test.beforeEach(async () => {
   await resetE2EDatabase();
   const listing = await seedE2EListing();
   listingId = listing.id;
-  await resetE2EEmailEvents(BASE_URL);
 });
 
 test("seller can create a listing", async ({ browser }) => {
@@ -67,125 +67,147 @@ test("seller can create a listing", async ({ browser }) => {
   expect(await getE2EListingByTitle("Playwright Boiler")).not.toBeNull();
 });
 
-test("buyer chats instantly; seller is notified once", async ({ browser }) => {
+test("chat opens WhatsApp and puts the item on hold", async ({ browser }) => {
   const buyer = await loginAs(browser, BUYER_ONE, `/listing/${listingId}`);
-
   const url = await chatOnWhatsApp(buyer);
-  expect(url).toContain("https://wa.me/919800000001");
-  expect(decodeURIComponent(url)).toContain("E2E Test Boiler");
 
-  // A second tap reopens the chat without a duplicate contact/notification.
-  await chatOnWhatsApp(buyer);
+  expect(url).toContain("https://wa.me/919800000001");
+  const message = decodeURIComponent(url);
+  expect(message).toContain("E2E Test Boiler");
+  expect(message).toContain("hidden this item while we talk");
+  expect(message).toContain("comes back on the marketplace in 7 days");
+  expect(message).toContain(`/listing/${listingId}/relist`);
+
+  const buyerOne = await getE2EUserByEmail(BUYER_ONE);
+  const listing = await getE2EListingById(listingId);
+  expect(listing?.status).toBe("RESERVED");
+  expect(listing?.heldByUserId).toBe(buyerOne!.id);
   expect(await getE2EContactsForListing(listingId)).toHaveLength(1);
 
-  const seller = await getE2EUserByEmail(SELLER);
-  expect(await getE2ENotifications(seller!.id, "NEW_CONTACT")).toHaveLength(1);
+  // The holder can reopen the chat; no duplicate contact.
+  await buyer.reload();
+  await expect(buyer.getByText(/on hold for you/i)).toBeVisible();
+  expect(await chatOnWhatsApp(buyer)).toContain("wa.me");
+  expect(await getE2EContactsForListing(listingId)).toHaveLength(1);
 
-  const sellerPage = await loginAs(browser, SELLER, "/dashboard/requests");
-  await expect(sellerPage.getByText("Buyer One")).toBeVisible();
+  // Hidden from the marketplace and blocked for other buyers.
+  const other = await loginAs(browser, BUYER_TWO, "/marketplace");
+  await expect(other.getByText("E2E Test Boiler")).toHaveCount(0);
+  await other.goto(`/listing/${listingId}`);
+  await expect(other.getByText(/Someone is already talking to the seller/)).toBeVisible();
+  await expect(other.getByRole("button", { name: "Chat on WhatsApp" })).toHaveCount(0);
 
-  // Nothing is emailed for a contact.
-  const events = await (await buyer.request.get("/api/e2e/email-events")).json();
-  expect(events.count).toBe(0);
+  // No notification system any more.
+  expect(await getE2ENotificationCount()).toBe(0);
 });
 
-test("buyers are rate limited", async ({ browser }) => {
+test("a buyer can hold at most 2 items", async ({ browser }) => {
+  const second = await seedE2EListing("Second Item");
+  const third = await seedE2EListing("Third Item");
+  const buyer = await loginAs(browser, BUYER_ONE, `/listing/${listingId}`);
+
+  await chatOnWhatsApp(buyer);
+  await buyer.goto(`/listing/${second.id}`);
+  await chatOnWhatsApp(buyer);
+
+  await buyer.goto(`/listing/${third.id}`);
+  const url = await chatOnWhatsApp(buyer);
+  expect(url).toContain(`/listing/${third.id}?error=limit`);
+  expect((await getE2EListingById(third.id))?.status).toBe("AVAILABLE");
+});
+
+test("buyers are rate limited per day", async ({ browser }) => {
   const buyerOne = await getE2EUserByEmail(BUYER_ONE);
   await seedE2EContacts(buyerOne!.id, 15);
 
   const buyer = await loginAs(browser, BUYER_ONE, `/listing/${listingId}`);
-  await buyer.getByRole("button", { name: "Chat on WhatsApp" }).click();
-  await expect(buyer.getByText(/contacted a lot of sellers today/)).toBeVisible();
-  expect(await getE2EContactsForListing(listingId)).toHaveLength(0);
-});
-
-test("seller reserves, unreserves, then sells to a buyer", async ({ browser }) => {
-  for (const email of [BUYER_ONE, BUYER_TWO]) {
-    await chatOnWhatsApp(await loginAs(browser, email, `/listing/${listingId}`));
-  }
-
-  const seller = await loginAs(browser, SELLER, `/listing/${listingId}`);
-  await seller.getByRole("button", { name: "Reserve", exact: true }).click();
-  await expect(seller.getByRole("button", { name: "Unreserve" })).toBeVisible();
-  expect((await getE2EListingById(listingId))?.status).toBe("RESERVED");
-
-  await seller.getByRole("button", { name: "Unreserve" }).click();
-  await expect(seller.getByRole("button", { name: "Reserve", exact: true })).toBeVisible();
+  const url = await chatOnWhatsApp(buyer);
+  expect(url).toContain("error=daily");
   expect((await getE2EListingById(listingId))?.status).toBe("AVAILABLE");
-
-  await seller.getByRole("button", { name: "Mark Sold", exact: true }).click();
-  await seller.getByLabel("Who bought it? (optional)").selectOption({ label: "Buyer One" });
-  await seller.getByRole("button", { name: "Mark sold", exact: true }).click();
-  await expect(seller.getByText("Marked as sold")).toBeVisible();
-
-  const listing = await getE2EListingById(listingId);
-  const buyerOne = await getE2EUserByEmail(BUYER_ONE);
-  const buyerTwo = await getE2EUserByEmail(BUYER_TWO);
-  expect(listing?.status).toBe("SOLD");
-  expect(listing?.soldToUserId).toBe(buyerOne!.id);
-  expect(await getE2ENotifications(buyerTwo!.id, "LISTING_SOLD")).toHaveLength(1);
-  expect(await getE2ENotifications(buyerOne!.id, "LISTING_SOLD")).toHaveLength(0);
-
-  await seller.goto("/marketplace");
-  await expect(seller.getByText("E2E Test Boiler")).toHaveCount(0);
 });
 
-test("two buyer reports hide a listing until the seller renews it", async ({ browser }) => {
-  for (const email of [BUYER_ONE, BUYER_TWO]) {
-    const buyer = await loginAs(browser, email, `/listing/${listingId}`);
-    await chatOnWhatsApp(buyer);
-    await buyer.getByRole("button", { name: "Report as sold" }).click();
-    await expect(buyer.getByText(/You reported this as sold/)).toBeVisible();
-  }
+test("only the seller can relist from the WhatsApp link", async ({ browser }) => {
+  await chatOnWhatsApp(await loginAs(browser, BUYER_ONE, `/listing/${listingId}`));
+  const relistPath = `/listing/${listingId}/relist`;
 
-  expect((await getE2EListingById(listingId))?.status).toBe("EXPIRED");
-  const sellerUser = await getE2EUserByEmail(SELLER);
-  expect(await getE2ENotifications(sellerUser!.id, "LISTING_REPORTED")).toHaveLength(1);
+  // Another student can't relist it.
+  const other = await loginAs(browser, BUYER_TWO, relistPath);
+  await expect(other.getByText("Only the seller can do this")).toBeVisible();
 
-  const seller = await loginAs(browser, SELLER, "/dashboard");
-  await expect(seller.getByText("Are these still available?")).toBeVisible();
-  await seller.getByRole("button", { name: "Renew" }).click();
-  await expect(seller.getByText("Listing is live again")).toBeVisible();
+  // The seller can.
+  const seller = await loginAs(browser, SELLER, relistPath);
+  await expect(seller.getByText(/On hold for Buyer One/)).toBeVisible();
+  await seller.getByRole("button", { name: "Put it back on the marketplace" }).click();
+  await seller.waitForURL(new RegExp(`/listing/${listingId}$`));
 
   const listing = await getE2EListingById(listingId);
   expect(listing?.status).toBe("AVAILABLE");
-  const contacts = await getE2EContactsForListing(listingId);
-  expect(contacts.every((c) => c.reportedUnavailableAt === null)).toBe(true);
+  expect(listing?.heldByUserId).toBeNull();
+
+  await other.goto("/marketplace");
+  await expect(other.getByText("E2E Test Boiler")).toBeVisible();
 });
 
-test("cron nudges stale listings once and expires old ones", async ({ request }) => {
+test("seller marks an on-hold item sold to the holder", async ({ browser }) => {
+  await chatOnWhatsApp(await loginAs(browser, BUYER_ONE, `/listing/${listingId}`));
+
+  const seller = await loginAs(browser, SELLER, `/listing/${listingId}/relist`);
+  await seller.getByRole("button", { name: /mark as sold/ }).click();
+  await seller.waitForURL(new RegExp(`/listing/${listingId}$`));
+
+  const buyerOne = await getE2EUserByEmail(BUYER_ONE);
+  const listing = await getE2EListingById(listingId);
+  expect(listing?.status).toBe("SOLD");
+  expect(listing?.soldToUserId).toBe(buyerOne!.id);
+});
+
+test("cron quietly hides listings untouched for 30 days", async ({ request }) => {
   expect((await request.get("/api/cron/listings")).status()).toBe(401);
   const auth = { headers: { authorization: `Bearer ${CRON_SECRET}` } };
 
-  await backdateE2EListing(listingId, { lastConfirmedDaysAgo: 15 });
-  let body = await (await request.get("/api/cron/listings", auth)).json();
-  expect(body).toMatchObject({ nudged: 1, expired: 0 });
+  await backdateE2EListing(listingId, 29);
+  expect(await (await request.get("/api/cron/listings", auth)).json()).toEqual({
+    relisted: 0,
+    expired: 0,
+  });
 
-  // Already nudged: a second run does nothing.
-  body = await (await request.get("/api/cron/listings", auth)).json();
-  expect(body).toMatchObject({ nudged: 0, expired: 0 });
-
-  const seller = await getE2EUserByEmail(SELLER);
-  expect(await getE2ENotifications(seller!.id, "CONFIRM_AVAILABILITY")).toHaveLength(1);
-  const emails = await (await request.get("/api/e2e/email-events")).json();
-  expect(emails.count).toBe(1);
-
-  await backdateE2EListing(listingId, { lastConfirmedDaysAgo: 22 });
-  body = await (await request.get("/api/cron/listings", auth)).json();
-  expect(body).toMatchObject({ expired: 1 });
+  await backdateE2EListing(listingId, 31);
+  expect(await (await request.get("/api/cron/listings", auth)).json()).toEqual({
+    relisted: 0,
+    expired: 1,
+  });
   expect((await getE2EListingById(listingId))?.status).toBe("EXPIRED");
+  expect(await getE2ENotificationCount()).toBe(0);
 });
 
-test("cron nudges the seller two days after a buyer makes contact", async ({ browser, request }) => {
+test("cron puts holds older than 7 days back on the marketplace", async ({ browser, request }) => {
   await chatOnWhatsApp(await loginAs(browser, BUYER_ONE, `/listing/${listingId}`));
   const auth = { headers: { authorization: `Bearer ${CRON_SECRET}` } };
 
-  let body = await (await request.get("/api/cron/listings", auth)).json();
-  expect(body).toMatchObject({ nudged: 0 });
+  await backdateE2EHold(listingId, 6);
+  expect(await (await request.get("/api/cron/listings", auth)).json()).toMatchObject({ relisted: 0 });
+  expect((await getE2EListingById(listingId))?.status).toBe("RESERVED");
 
-  await backdateE2EListing(listingId, { lastConfirmedDaysAgo: 3, contactsHoursAgo: 49 });
-  body = await (await request.get("/api/cron/listings", auth)).json();
-  expect(body).toMatchObject({ nudged: 1 });
+  // Old listing too: relisting resets the 30-day clock so it isn't expired.
+  await backdateE2EHold(listingId, 8);
+  await backdateE2EListing(listingId, 40);
+  expect(await (await request.get("/api/cron/listings", auth)).json()).toEqual({
+    relisted: 1,
+    expired: 0,
+  });
+  const listing = await getE2EListingById(listingId);
+  expect(listing?.status).toBe("AVAILABLE");
+  expect(listing?.heldByUserId).toBeNull();
+
+  // Sold items are never relisted.
+  const sold = await seedE2EListing("Sold Item");
+  await chatOnWhatsApp(await loginAs(browser, BUYER_TWO, `/listing/${sold.id}`));
+  const seller = await loginAs(browser, SELLER, `/listing/${sold.id}/relist`);
+  await seller.getByRole("button", { name: /mark as sold/ }).click();
+  await seller.waitForURL(new RegExp(`/listing/${sold.id}$`));
+  await backdateE2EHold(sold.id, 30);
+  await request.get("/api/cron/listings", auth);
+  expect((await getE2EListingById(sold.id))?.status).toBe("SOLD");
 });
 
 test("non-college accounts cannot sign in", async ({ page }) => {
