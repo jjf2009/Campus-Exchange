@@ -6,7 +6,7 @@ import { users } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import type { DbUser } from "@/db/schema";
 import { E2E_TEST_COOKIE, isE2ETestMode, parseE2EUserCookie } from "@/lib/e2e";
-import { BRANCHES, YEARS } from "@/lib/constants";
+import { BRANCHES, YEARS, isAllowedEmail } from "@/lib/constants";
 import { isValidPhone } from "@/lib/validations";
 
 export async function getSessionUser() {
@@ -23,6 +23,7 @@ export async function getCurrentUser(): Promise<DbUser | null> {
       const cookieStore = await cookies();
       const email = parseE2EUserCookie(cookieStore.get(E2E_TEST_COOKIE)?.value);
       if (email) {
+        if (!isAllowedEmail(email)) return null;
         const [testUser] = await db
           .select()
           .from(users)
@@ -37,7 +38,7 @@ export async function getCurrentUser(): Promise<DbUser | null> {
   }
 
   const authUser = await getSessionUser();
-  if (!authUser?.email) return null;
+  if (!authUser?.email || !isAllowedEmail(authUser.email)) return null;
 
   try {
     const [dbUser] = await db

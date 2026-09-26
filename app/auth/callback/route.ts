@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isProfileComplete } from "@/lib/auth";
 import { getAppUrl } from "@/lib/app-url";
+import { isAllowedEmail } from "@/lib/constants";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -17,7 +18,12 @@ export async function GET(request: Request) {
   if (code) {
     try {
       const supabase = await createClient();
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (!error && !isAllowedEmail(data.user?.email)) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${appUrl}/login?error=domain`);
+      }
 
       if (!error) {
         // Ensure user row exists; incomplete profiles must finish setup first.

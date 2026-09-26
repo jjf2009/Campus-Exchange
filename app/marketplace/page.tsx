@@ -134,6 +134,9 @@ async function MarketplaceGrid({
             imageUrl={item.imageUrl}
             sellerName={item.sellerName}
             createdAt={item.createdAt}
+            reserved={item.status === "RESERVED"}
+            lastConfirmedAt={item.lastConfirmedAt}
+            contactCount={item.contactCount}
           />
         ))}
       </div>

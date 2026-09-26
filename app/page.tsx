@@ -37,7 +37,7 @@ export default async function LandingPage() {
             <p className="mt-6 text-lg text-muted-foreground sm:text-xl">
               {APP_NAME} connects seniors with juniors for boilers, drafters,
               calculators, books, and hostel gear — no online payments, just
-              WhatsApp after acceptance.
+              a WhatsApp chat.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" className="w-full sm:w-auto" render={<Link href="/login" />} nativeButton={false}>
@@ -60,13 +60,13 @@ export default async function LandingPage() {
             />
             <Feature
               icon={<MessageCircle className="h-5 w-5" />}
-              title="Request & connect"
-              description="Buyers request items. You accept one person and share WhatsApp."
+              title="Chat instantly"
+              description="Tap Chat on WhatsApp and message the seller straight away. No waiting for approval."
             />
             <Feature
               icon={<ShieldCheck className="h-5 w-5" />}
               title="Trusted campus only"
-              description="Google login keeps it simple. Phone numbers stay private until you accept."
+              description="Only @gec.ac.in accounts can sign in, and stale listings are hidden automatically."
             />
           </div>
         </section>

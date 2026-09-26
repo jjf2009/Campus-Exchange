@@ -1,8 +1,8 @@
 # GEC Exchange (Campus Exchange)
 
-Marketpl ace exclusively for **Goa College of Engineering** students to buy and sell used academic equipment, electronics, books, and hostel items.
+Marketplace exclusively for **Goa College of Engineering** students to buy and sell used academic equipment, electronics, books, and hostel items.
 
-No online payments — students list items, request them, and connect on WhatsApp after the seller accepts.
+No online payments — students list items and buyers chat with the seller on WhatsApp in one tap.
 
 ## Stack
 
@@ -21,10 +21,12 @@ No online payments — students list items, request them, and connect on WhatsAp
 - Marketplace with search + category filters
 - Create / edit / soft-delete listings
 - Image upload to Supabase Storage
-- Request to buy → accept / reject
-- Reveal seller WhatsApp only after acceptance
+- GEC-only login (`@gec.ac.in` Google accounts)
+- One-tap "Chat on WhatsApp" with a pre-filled message (rate-limited)
+- Reserve / unreserve, mark sold (optionally to a specific buyer)
+- Listing freshness: sellers are nudged to confirm availability, stale listings auto-hide, buyers can report sold items
 - Mark item sold
-- Seller dashboard (overview, listings, requests, profile)
+- Seller dashboard (overview, listings, interested buyers, profile)
 
 ## Quick start
 
@@ -74,7 +76,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (server only) |
 | `DATABASE_URL` | Postgres connection string |
 | `NEXT_PUBLIC_APP_URL` | App origin (`http://localhost:3000`) |
-| `RESEND_API_KEY` | Optional — emails for accept/reject |
+| `RESEND_API_KEY` | Optional — "still available?" / "listing hidden" emails to sellers |
+| `CRON_SECRET` | Secret Vercel Cron sends to `/api/cron/listings` (set in Vercel project env) |
 | `E2E_TEST_MODE` | Enables test-only login + mock email transport |
 
 ## Scripts
@@ -96,7 +99,7 @@ Set `E2E_TEST_MODE=true` when running the Playwright suite. In that mode:
 
 - a test-only login route can set a session cookie for seeded demo users
 - email notifications are captured locally instead of calling Resend
-- request, listing, notification, and acceptance flows can be exercised safely
+- contact, reserve/sell, report, and cron flows can be exercised safely
 
 ## Project structure
 
@@ -115,12 +118,20 @@ docs/          # PRD, architecture, tasks
 
 ```
 Student lists item
-  → Another student requests it
-  → Owner accepts one buyer
-  → Buyer gets WhatsApp number
+  → Buyer taps "Chat on WhatsApp" (seller is notified)
   → Students coordinate offline
-  → Owner marks item sold
+  → Seller marks it Reserved (reversible) and then Sold
+     └ everyone else who asked is told it's sold
 ```
+
+### Keeping listings fresh
+
+A daily Vercel Cron (`vercel.json` → `/api/cron/listings`) keeps sold items off the marketplace:
+
+- **48h after a buyer makes contact**, or **14 days without confirmation**, the seller is asked
+  "Still available?" (notification + email) with one-tap Sold / Reserved / Still available.
+- **21 days without confirmation**, the listing is hidden. The seller can renew it in one tap.
+- **2 buyers who contacted the seller report "sold"**, and the listing is hidden until the seller renews it.
 
 ## Docs
 

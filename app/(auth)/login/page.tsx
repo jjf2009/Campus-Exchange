@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { APP_NAME } from "@/lib/constants";
+import { ALLOWED_EMAIL_DOMAIN, APP_NAME } from "@/lib/constants";
 
 export const metadata = {
   title: "Login",
@@ -34,13 +34,16 @@ export default async function LoginPage({
           </Link>
           <CardTitle className="text-2xl">Welcome to {APP_NAME}</CardTitle>
           <CardDescription>
-            Sign in with your Google account to buy and sell campus essentials.
+            Sign in with your @{ALLOWED_EMAIL_DOMAIN} Google account to buy and
+            sell campus essentials.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {params.error ? (
             <p className="rounded-lg bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">
-              Sign-in failed. Please try again.
+              {params.error === "domain"
+                ? `Please sign in with your @${ALLOWED_EMAIL_DOMAIN} college account.`
+                : "Sign-in failed. Please try again."}
             </p>
           ) : null}
           <form

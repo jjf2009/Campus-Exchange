@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/app-url";
 import { sendEmailNotification } from "@/lib/notifications/notification-service";
 
 function escapeHtml(value: string) {
@@ -28,66 +29,57 @@ function buildEmailShell(title: string, preview: string, body: string) {
   `;
 }
 
-function buildAcceptedEmailHtml(params: {
-  buyerName: string;
-  listingTitle: string;
+function buildSellerEmailHtml(params: {
   sellerName: string;
-  sellerPhone: string;
+  heading: string;
+  body: string;
+  ctaLabel: string;
 }) {
+  const dashboardUrl = `${getAppUrl()}/dashboard`;
   return buildEmailShell(
-    `Request accepted: ${params.listingTitle}`,
-    `Your request for ${params.listingTitle} was accepted`,
+    params.heading,
+    params.body,
     `
       <div style="max-width:600px;margin:24px auto;padding:24px;background:#fff;border-radius:12px;">
-        <h2 style="margin:0 0 16px;font-size:24px;line-height:1.2;">Great news, ${escapeHtml(params.buyerName)}!</h2>
-        <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">Your request for <strong>${escapeHtml(params.listingTitle)}</strong> was accepted.</p>
-        <p style="margin:0 0 8px;font-size:16px;line-height:1.6;">Contact the seller on WhatsApp:</p>
-        <p style="margin:0 0 16px;font-size:16px;line-height:1.6;"><strong>${escapeHtml(params.sellerName)}</strong> - ${escapeHtml(params.sellerPhone)}</p>
-        <p style="margin:0;font-size:14px;line-height:1.6;color:#475569;">Coordinate pickup and payment offline. Campus Exchange does not handle payments.</p>
+        <h2 style="margin:0 0 16px;font-size:24px;line-height:1.2;">Hi ${escapeHtml(params.sellerName)},</h2>
+        <p style="margin:0 0 20px;font-size:16px;line-height:1.6;">${escapeHtml(params.body)}</p>
+        <a href="${dashboardUrl}" style="display:inline-block;padding:12px 20px;background:#0f172a;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold;">${escapeHtml(params.ctaLabel)}</a>
+        <p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#475569;">It takes one tap, and keeps the marketplace accurate for everyone.</p>
       </div>
     `
   );
 }
 
-function buildRejectedEmailHtml(params: {
-  buyerName: string;
-  listingTitle: string;
-}) {
-  return buildEmailShell(
-    `Request update: ${params.listingTitle}`,
-    `Update on your request for ${params.listingTitle}`,
-    `
-      <div style="max-width:600px;margin:24px auto;padding:24px;background:#fff;border-radius:12px;">
-        <h2 style="margin:0 0 16px;font-size:24px;line-height:1.2;">Hi ${escapeHtml(params.buyerName)},</h2>
-        <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">Unfortunately, your request for <strong>${escapeHtml(params.listingTitle)}</strong> was not accepted.</p>
-        <p style="margin:0;font-size:16px;line-height:1.6;">Keep browsing the marketplace - more items are listed every day.</p>
-      </div>
-    `
-  );
-}
-
-export async function sendRequestAcceptedEmail(params: {
+export async function sendConfirmAvailabilityEmail(params: {
   to: string;
-  buyerName: string;
-  listingTitle: string;
   sellerName: string;
-  sellerPhone: string;
+  listingTitle: string;
 }) {
   await sendEmailNotification({
     to: params.to,
-    subject: `Request accepted: ${params.listingTitle}`,
-    html: buildAcceptedEmailHtml(params),
+    subject: `Is ${params.listingTitle} still available?`,
+    html: buildSellerEmailHtml({
+      sellerName: params.sellerName,
+      heading: `Is ${params.listingTitle} still available?`,
+      body: `Let buyers know whether ${params.listingTitle} is sold, reserved or still available.`,
+      ctaLabel: "Update listing",
+    }),
   });
 }
 
-export async function sendRequestRejectedEmail(params: {
+export async function sendListingExpiredEmail(params: {
   to: string;
-  buyerName: string;
+  sellerName: string;
   listingTitle: string;
 }) {
   await sendEmailNotification({
     to: params.to,
-    subject: `Request update: ${params.listingTitle}`,
-    html: buildRejectedEmailHtml(params),
+    subject: `${params.listingTitle} was hidden from the marketplace`,
+    html: buildSellerEmailHtml({
+      sellerName: params.sellerName,
+      heading: `${params.listingTitle} was hidden`,
+      body: `We hid ${params.listingTitle} because it hasn't been confirmed as available recently. Still selling it? Renew it in one tap.`,
+      ctaLabel: "Renew listing",
+    }),
   });
 }

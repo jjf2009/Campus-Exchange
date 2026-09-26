@@ -1,15 +1,35 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { listings, purchaseRequests } from "@/db/schema";
+import { listingContacts, listings } from "@/db/schema";
+import { getListingContactBuyers } from "@/db/queries/contacts";
+import { VISIBLE_STATUSES } from "@/db/queries/listings";
 import { requireCompleteProfile } from "@/lib/auth";
 import { getCategoryImage } from "@/lib/constants";
 import { createNotification } from "@/lib/notifications/notification-service";
 import { listingSchema } from "@/lib/validations";
 import type { ActionResult } from "@/types";
+
+async function getOwnListing(listingId: unknown, sellerId: string) {
+  if (!listingId || typeof listingId !== "string") return null;
+  const [existing] = await db
+    .select()
+    .from(listings)
+    .where(and(eq(listings.id, listingId), eq(listings.sellerId, sellerId)))
+    .limit(1);
+  return existing ?? null;
+}
+
+function revalidateListing(listingId: string) {
+  revalidatePath("/marketplace");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/listings");
+  revalidatePath("/dashboard/requests");
+  revalidatePath(`/listing/${listingId}`);
+}
 
 export async function createListing(
   formData: FormData
@@ -119,6 +139,10 @@ export async function updateListing(formData: FormData): Promise<ActionResult> {
         category: parsed.data.category,
         condition: parsed.data.condition,
         imageUrl,
+        // Editing counts as confirming the item is still available.
+        status: existing.status === "EXPIRED" ? "AVAILABLE" : existing.status,
+        lastConfirmedAt: new Date(),
+        nudgedAt: null,
         updatedAt: new Date(),
       })
       .where(eq(listings.id, id));
@@ -176,71 +200,154 @@ export async function deleteListing(listingId: string): Promise<ActionResult> {
 }
 
 export async function markListingSold(
-  listingId: string
+  listingId: string,
+  soldToUserId?: string | null
 ): Promise<ActionResult> {
   try {
     const user = await requireCompleteProfile();
-
-    if (!listingId || typeof listingId !== "string") {
-      return { success: false, error: "Invalid listing id" };
-    }
-
-    const [existing] = await db
-      .select()
-      .from(listings)
-      .where(and(eq(listings.id, listingId), eq(listings.sellerId, user.id)))
-      .limit(1);
+    const existing = await getOwnListing(listingId, user.id);
 
     if (!existing) {
       return { success: false, error: "Listing not found or unauthorized" };
     }
 
-    if (existing.status === "SOLD") {
-      return { success: false, error: "Listing is already sold" };
+    if (existing.status === "SOLD" || existing.status === "ARCHIVED") {
+      return { success: false, error: "This listing is already closed" };
     }
 
-    const acceptedRequest = await db
-      .select({
-        buyerId: purchaseRequests.buyerId,
-      })
-      .from(purchaseRequests)
-      .where(
-        and(
-          eq(purchaseRequests.listingId, listingId),
-          eq(purchaseRequests.status, "ACCEPTED")
-        )
-      )
-      .limit(1);
+    const buyers = await getListingContactBuyers(listingId);
+
+    if (soldToUserId && !buyers.some((b) => b.id === soldToUserId)) {
+      return {
+        success: false,
+        error: "Buyer must be someone who contacted you about this item",
+      };
+    }
 
     await db
       .update(listings)
-      .set({ status: "SOLD", updatedAt: new Date() })
+      .set({
+        status: "SOLD",
+        soldToUserId: soldToUserId || null,
+        nudgedAt: null,
+        updatedAt: new Date(),
+      })
       .where(eq(listings.id, listingId));
 
-    if (acceptedRequest[0]?.buyerId) {
-      await createNotification({
-        userId: acceptedRequest[0].buyerId,
-        type: "LISTING_SOLD",
-        title: `${existing.title} marked as sold`,
-        message: `The seller marked ${existing.title} as sold.`,
-        data: {
-          href: "/dashboard/requests",
-          listingId,
-        },
-      });
-    }
+    // Let everyone else who asked about it know, so nobody is left waiting.
+    await Promise.all(
+      buyers
+        .filter((b) => b.id !== soldToUserId)
+        .map((b) =>
+          createNotification({
+            userId: b.id,
+            type: "LISTING_SOLD",
+            title: `${existing.title} was sold`,
+            message: `${existing.title}, which you asked about, has been sold.`,
+            data: { href: "/dashboard/requests", listingId },
+          })
+        )
+    );
 
-    revalidatePath("/marketplace");
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/listings");
-    revalidatePath(`/listing/${listingId}`);
-
+    revalidateListing(listingId);
     return { success: true };
   } catch (error) {
     console.error("markListingSold error:", error);
     return {
       success: false,
       error: "Failed to mark listing as sold. Please try again.",
+    };
+  }
+}
+
+/** Available ⇄ Reserved. Reserving is reversible if the deal falls through. */
+export async function setListingReserved(
+  listingId: string,
+  reserved: boolean
+): Promise<ActionResult> {
+  try {
+    const user = await requireCompleteProfile();
+    const existing = await getOwnListing(listingId, user.id);
+
+    if (!existing) {
+      return { success: false, error: "Listing not found or unauthorized" };
+    }
+
+    if (!(VISIBLE_STATUSES as readonly string[]).includes(existing.status)) {
+      return { success: false, error: "Only live listings can be reserved" };
+    }
+
+    await db
+      .update(listings)
+      .set({
+        status: reserved ? "RESERVED" : "AVAILABLE",
+        lastConfirmedAt: new Date(),
+        nudgedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(listings.id, listingId));
+
+    revalidateListing(listingId);
+    return { success: true };
+  } catch (error) {
+    console.error("setListingReserved error:", error);
+    return {
+      success: false,
+      error: "Failed to update listing. Please try again.",
+    };
+  }
+}
+
+/**
+ * Seller says "still available": resets the freshness clock, clears buyer
+ * reports, and brings an expired listing back onto the marketplace.
+ */
+export async function confirmAvailable(
+  listingId: string
+): Promise<ActionResult> {
+  try {
+    const user = await requireCompleteProfile();
+    const existing = await getOwnListing(listingId, user.id);
+
+    if (!existing) {
+      return { success: false, error: "Listing not found or unauthorized" };
+    }
+
+    if (
+      !([...VISIBLE_STATUSES, "EXPIRED"] as string[]).includes(existing.status)
+    ) {
+      return { success: false, error: "This listing is already closed" };
+    }
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(listings)
+        .set({
+          status: existing.status === "EXPIRED" ? "AVAILABLE" : existing.status,
+          lastConfirmedAt: new Date(),
+          nudgedAt: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(listings.id, listingId),
+            inArray(listings.status, [...VISIBLE_STATUSES, "EXPIRED"])
+          )
+        );
+
+      await tx
+        .update(listingContacts)
+        .set({ reportedUnavailableAt: null })
+        .where(eq(listingContacts.listingId, listingId));
+    });
+
+    revalidateListing(listingId);
+    return { success: true };
+  } catch (error) {
+    console.error("confirmAvailable error:", error);
+    return {
+      success: false,
+      error: "Failed to update listing. Please try again.",
     };
   }
 }

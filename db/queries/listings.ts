@@ -1,7 +1,27 @@
-import { and, count, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/db";
 import { listings, users } from "@/db/schema";
 import type { Category } from "@/types";
+
+/** Statuses buyers can see and contact on the marketplace. */
+export const VISIBLE_STATUSES = ["AVAILABLE", "RESERVED"] as const;
+
+const contactCount = sql<number>`(
+  select count(*)::int from listing_contacts lc
+  where lc.listing_id = ${listings.id}
+)`;
 
 export async function getMarketplaceListings(options?: {
   search?: string;
@@ -9,7 +29,7 @@ export async function getMarketplaceListings(options?: {
   limit?: number;
   offset?: number;
 }) {
-  const conditions = [eq(listings.status, "AVAILABLE")];
+  const conditions = [inArray(listings.status, [...VISIBLE_STATUSES])];
 
   if (options?.search?.trim()) {
     const term = `%${options.search.trim()}%`;
@@ -33,6 +53,8 @@ export async function getMarketplaceListings(options?: {
       condition: listings.condition,
       imageUrl: listings.imageUrl,
       status: listings.status,
+      lastConfirmedAt: listings.lastConfirmedAt,
+      contactCount,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
       sellerName: users.name,
@@ -43,7 +65,11 @@ export async function getMarketplaceListings(options?: {
     .from(listings)
     .innerJoin(users, eq(listings.sellerId, users.id))
     .where(and(...conditions))
-    .orderBy(desc(listings.createdAt));
+    // Reserved items sink below available ones.
+    .orderBy(
+      asc(sql`${listings.status} = 'RESERVED'`),
+      desc(listings.createdAt)
+    );
 
   const totalQuery = db
     .select({ count: count() })
@@ -73,6 +99,8 @@ export async function getListingById(id: string) {
       condition: listings.condition,
       imageUrl: listings.imageUrl,
       status: listings.status,
+      lastConfirmedAt: listings.lastConfirmedAt,
+      contactCount,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
       sellerName: users.name,
@@ -90,7 +118,19 @@ export async function getListingById(id: string) {
 
 export async function getListingsBySeller(sellerId: string) {
   return db
-    .select()
+    .select({
+      id: listings.id,
+      title: listings.title,
+      price: listings.price,
+      category: listings.category,
+      condition: listings.condition,
+      imageUrl: listings.imageUrl,
+      status: listings.status,
+      lastConfirmedAt: listings.lastConfirmedAt,
+      nudgedAt: listings.nudgedAt,
+      contactCount,
+      createdAt: listings.createdAt,
+    })
     .from(listings)
     .where(
       and(eq(listings.sellerId, sellerId), ne(listings.status, "ARCHIVED"))
@@ -111,16 +151,48 @@ export async function getSellerStats(sellerId: string) {
   const stats = {
     total: 0,
     available: 0,
-    pending: 0,
+    reserved: 0,
     sold: 0,
+    expired: 0,
   };
 
   for (const row of rows) {
     stats.total += row.count;
     if (row.status === "AVAILABLE") stats.available = row.count;
-    if (row.status === "PENDING_APPROVAL") stats.pending = row.count;
+    if (row.status === "RESERVED") stats.reserved = row.count;
     if (row.status === "SOLD") stats.sold = row.count;
+    if (row.status === "EXPIRED") stats.expired = row.count;
   }
 
   return stats;
+}
+
+/**
+ * Seller listings waiting on a "still available?" answer: nudged by the
+ * cron job, or hidden after expiring / being reported.
+ */
+export async function getListingsNeedingAttention(sellerId: string) {
+  return db
+    .select({
+      id: listings.id,
+      title: listings.title,
+      price: listings.price,
+      status: listings.status,
+      lastConfirmedAt: listings.lastConfirmedAt,
+      contactCount,
+    })
+    .from(listings)
+    .where(
+      and(
+        eq(listings.sellerId, sellerId),
+        or(
+          eq(listings.status, "EXPIRED"),
+          and(
+            inArray(listings.status, [...VISIBLE_STATUSES]),
+            isNotNull(listings.nudgedAt)
+          )
+        )
+      )
+    )
+    .orderBy(desc(listings.updatedAt));
 }

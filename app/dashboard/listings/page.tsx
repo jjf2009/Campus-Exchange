@@ -6,9 +6,11 @@ import { ListingActions } from "@/components/ListingActions";
 import { ListingStatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getContactsForSeller } from "@/db/queries/contacts";
 import { getListingsBySeller } from "@/db/queries/listings";
 import { requireCompleteProfile } from "@/lib/auth";
 import { getCategoryImage } from "@/lib/constants";
+import { formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
 import type { ListingStatus } from "@/types";
 
@@ -18,7 +20,16 @@ export const metadata = {
 
 export default async function MyListingsPage() {
   const user = await requireCompleteProfile();
-  const items = await getListingsBySeller(user.id);
+  const [items, contacts] = await Promise.all([
+    getListingsBySeller(user.id),
+    getContactsForSeller(user.id),
+  ]);
+  const buyersByListing = new Map<string, { id: string; name: string }[]>();
+  for (const c of contacts) {
+    const list = buyersByListing.get(c.listingId) ?? [];
+    list.push({ id: c.buyerId, name: c.buyerName });
+    buyersByListing.set(c.listingId, list);
+  }
 
   if (items.length === 0) {
     return (
@@ -75,10 +86,20 @@ export default async function MyListingsPage() {
                 <p className="text-sm text-muted-foreground">
                   {formatPrice(item.price)} · {item.category} · {item.condition}
                 </p>
+                {item.status === "AVAILABLE" || item.status === "RESERVED" ? (
+                  <p className="text-xs text-muted-foreground">
+                    Confirmed {formatRelativeDate(item.lastConfirmedAt)}
+                    {item.contactCount > 0
+                      ? ` · ${item.contactCount} interested`
+                      : ""}
+                  </p>
+                ) : null}
               </div>
               <ListingActions
                 listingId={item.id}
                 status={item.status as ListingStatus}
+                buyers={buyersByListing.get(item.id) ?? []}
+                askToConfirm={Boolean(item.nudgedAt)}
               />
             </CardContent>
           </Card>

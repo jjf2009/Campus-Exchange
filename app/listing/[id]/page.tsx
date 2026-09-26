@@ -4,14 +4,14 @@ import { ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { ListingActions } from "@/components/ListingActions";
 import { Navbar } from "@/components/Navbar";
-import { RequestButton } from "@/components/RequestButton";
+import { ContactSellerButton } from "@/components/ContactSellerButton";
 import { SafeImage } from "@/components/SafeImage";
 import { ListingStatusBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { getListingById } from "@/db/queries/listings";
-import { getRequestForListing } from "@/db/queries/requests";
+import { getContact, getListingContactBuyers } from "@/db/queries/contacts";
 import { requireCompleteProfile } from "@/lib/auth";
 import { getCategoryImage } from "@/lib/constants";
 import { getNavbarNotifications } from "@/lib/notifications/notification-service";
@@ -46,15 +46,17 @@ export default async function ListingDetailPage({
   }
 
   const isOwner = listing.sellerId === user.id;
-  const existingRequest = isOwner
-    ? null
-    : await getRequestForListing(listing.id, user.id);
+  const [contact, buyers] = await Promise.all([
+    isOwner ? null : getContact(listing.id, user.id),
+    isOwner ? getListingContactBuyers(listing.id) : [],
+  ]);
 
-  const isAvailable = listing.status === "AVAILABLE";
-  let disabledReason: string | undefined;
-  if (listing.status === "SOLD") disabledReason = "This item has been sold.";
-  if (listing.status === "PENDING_APPROVAL")
-    disabledReason = "Seller is finalizing with another buyer.";
+  const canContact =
+    listing.status === "AVAILABLE" || listing.status === "RESERVED";
+  let unavailableReason: string | undefined;
+  if (listing.status === "SOLD") unavailableReason = "This item has been sold.";
+  if (listing.status === "EXPIRED")
+    unavailableReason = "The seller hasn't confirmed this is still available.";
 
   const displayImage =
     listing.imageUrl && listing.imageUrl.startsWith("/")
@@ -101,6 +103,15 @@ export default async function ListingDetailPage({
               <p className="text-3xl font-bold text-primary">
                 {formatPrice(listing.price)}
               </p>
+              {canContact ? (
+                <p className="text-sm text-muted-foreground">
+                  Confirmed available{" "}
+                  {formatRelativeDate(listing.lastConfirmedAt)}
+                  {listing.contactCount > 0
+                    ? ` · ${listing.contactCount} ${listing.contactCount === 1 ? "student" : "students"} interested`
+                    : ""}
+                </p>
+              ) : null}
             </div>
 
             <Separator />
@@ -140,48 +151,31 @@ export default async function ListingDetailPage({
             {isOwner ? (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  This is your listing. Manage it from your dashboard.
+                  {buyers.length > 0
+                    ? `${buyers.length} ${buyers.length === 1 ? "student has" : "students have"} contacted you about this on WhatsApp.`
+                    : "This is your listing. Buyers will message you on WhatsApp."}
                 </p>
                 <ListingActions
                   listingId={listing.id}
                   status={listing.status as ListingStatus}
+                  buyers={buyers}
                 />
               </div>
             ) : (
               <div className="space-y-3">
-                <RequestButton
+                {listing.status === "RESERVED" ? (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    Reserved for another buyer. You can still message the
+                    seller in case the deal falls through.
+                  </p>
+                ) : null}
+                <ContactSellerButton
                   listingId={listing.id}
-                  alreadyRequested={Boolean(existingRequest)}
-                  disabled={!isAvailable && !existingRequest}
-                  disabledReason={disabledReason}
+                  available={canContact}
+                  unavailableReason={unavailableReason}
+                  contacted={Boolean(contact)}
+                  reported={Boolean(contact?.reportedUnavailableAt)}
                 />
-                {existingRequest?.status === "PENDING" ? (
-                  <p className="text-sm text-muted-foreground">
-                    Request sent — waiting for the seller.
-                  </p>
-                ) : null}
-                {existingRequest?.status === "ACCEPTED" ? (
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                    <p className="font-semibold">Request accepted!</p>
-                    <p className="mt-1">
-                      Check your dashboard requests for the seller&apos;s
-                      WhatsApp number.
-                    </p>
-                    <Button
-                      size="sm"
-                      className="mt-3"
-                      render={<Link href="/dashboard/requests" />}
-                      nativeButton={false}
-                    >
-                      View contact
-                    </Button>
-                  </div>
-                ) : null}
-                {existingRequest?.status === "REJECTED" ? (
-                  <p className="text-sm text-destructive">
-                    The seller rejected your request.
-                  </p>
-                ) : null}
               </div>
             )}
           </div>

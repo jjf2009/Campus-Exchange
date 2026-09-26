@@ -1,10 +1,10 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { listings, notifications, purchaseRequests, users } from "@/db/schema";
+import { listingContacts, listings, notifications, users } from "@/db/schema";
 
 export async function resetE2EDatabase() {
   await db.execute(sql`
-    TRUNCATE TABLE notifications, purchase_requests, listings, users RESTART IDENTITY CASCADE;
+    TRUNCATE TABLE notifications, listing_contacts, purchase_requests, listings, users RESTART IDENTITY CASCADE;
   `);
 
   await db.insert(users).values([
@@ -75,8 +75,57 @@ export async function getE2EListingByTitle(title: string) {
   return listing ?? null;
 }
 
-export async function getE2ERequestsForListing(listingId: string) {
-  return db.select().from(purchaseRequests).where(eq(purchaseRequests.listingId, listingId));
+export async function getE2EListingById(id: string) {
+  const [listing] = await db.select().from(listings).where(eq(listings.id, id)).limit(1);
+  return listing ?? null;
+}
+
+export async function getE2EContactsForListing(listingId: string) {
+  return db.select().from(listingContacts).where(eq(listingContacts.listingId, listingId));
+}
+
+export async function getE2ENotifications(userId: string, type?: string) {
+  const rows = await db.select().from(notifications).where(eq(notifications.userId, userId));
+  return type ? rows.filter((row) => row.type === type) : rows;
+}
+
+/** Give a buyer `n` contacts made just now on throwaway listings. */
+export async function seedE2EContacts(buyerId: string, n: number) {
+  const seller = await getE2EUserByEmail("seller.demo@gec.ac.in");
+  if (!seller) throw new Error("Missing seller seed user");
+  const created = await db
+    .insert(listings)
+    .values(
+      Array.from({ length: n }, (_, i) => ({
+        sellerId: seller.id,
+        title: `Filler ${i}`,
+        description: "Filler listing for rate-limit testing.",
+        price: 10,
+        category: "Others",
+        condition: "Good",
+        status: "AVAILABLE" as const,
+      }))
+    )
+    .returning({ id: listings.id });
+  await db.insert(listingContacts).values(created.map((l) => ({ listingId: l.id, buyerId })));
+}
+
+export async function backdateE2EListing(
+  listingId: string,
+  fields: { lastConfirmedDaysAgo?: number; contactsHoursAgo?: number }
+) {
+  if (fields.lastConfirmedDaysAgo !== undefined) {
+    await db
+      .update(listings)
+      .set({ lastConfirmedAt: new Date(Date.now() - fields.lastConfirmedDaysAgo * 86_400_000) })
+      .where(eq(listings.id, listingId));
+  }
+  if (fields.contactsHoursAgo !== undefined) {
+    await db
+      .update(listingContacts)
+      .set({ createdAt: new Date(Date.now() - fields.contactsHoursAgo * 3_600_000) })
+      .where(eq(listingContacts.listingId, listingId));
+  }
 }
 
 export async function getE2ENotificationCount(userId: string) {

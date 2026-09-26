@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAllowedEmail } from "@/lib/constants";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -43,16 +44,22 @@ export async function updateSession(request: NextRequest) {
 
   const publicPaths = ["/", "/login", "/auth/callback", "/api/health"];
   const isPublic =
-    publicPaths.includes(path) || path.startsWith("/auth/");
+    publicPaths.includes(path) ||
+    path.startsWith("/auth/") ||
+    // Cron routes authenticate with CRON_SECRET instead of a session.
+    path.startsWith("/api/cron/");
 
-  if (!user && !isPublic) {
+  // Non-college accounts are treated as signed out.
+  const signedIn = Boolean(user && isAllowedEmail(user.email));
+
+  if (!signedIn && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
 
-  if (user && path === "/login") {
+  if (signedIn && path === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/marketplace";
     return NextResponse.redirect(url);

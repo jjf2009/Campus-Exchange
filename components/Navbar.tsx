@@ -143,7 +143,7 @@ export function Navbar({ user, notifications }: NavbarProps) {
                 <DropdownMenuItem
                   render={<Link href="/dashboard/requests" />}
                 >
-                  View all requests
+                  View interested buyers
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

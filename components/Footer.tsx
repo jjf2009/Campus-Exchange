@@ -7,7 +7,7 @@ export function Footer() {
         <p>
           © {new Date().getFullYear()} {APP_NAME}. For GEC students only.
         </p>
-        <p>No payments online — connect on WhatsApp after acceptance.</p>
+        <p>No payments online — chat on WhatsApp and meet on campus.</p>
       </div>
     </footer>
   );
