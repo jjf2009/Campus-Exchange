@@ -175,8 +175,9 @@ Students meet and pay offline
 
 ↓
 
-Deal done → nothing to do (optionally Mark Sold)
-Deal failed → seller taps the relist link → item is live again
+Deal done → seller taps the link → Mark as sold
+Deal failed → nothing to do: back on the marketplace after 7 days
+(or the seller relists sooner from the same link)
 ```
 
 > **Why?** v1 had no way to know when an item sold. v2 added "request →
@@ -391,7 +392,7 @@ Visible on the marketplace. Buyers can chat.
 RESERVED ("On hold")
 
 A buyer tapped Chat on WhatsApp. Hidden from the marketplace until the seller
-relists it or marks it sold.
+marks it sold or relists it; automatically relisted after 7 days.
 
 SOLD
 
@@ -424,7 +425,8 @@ Hi! I'm interested in your Boiler (₹850) on GEC Exchange.
 <listing link>
 
 📌 GEC Exchange has hidden this item while we talk.
-If our deal doesn't work out, put it back on the marketplace here:
+If it sells, mark it sold here. Otherwise it comes back on the marketplace
+in 7 days (or relist it sooner from the same link):
 <listing link>/relist
 ```
 

@@ -14,6 +14,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { getListingById } from "@/db/queries/listings";
 import { requireCompleteProfile } from "@/lib/auth";
+import { HOLD_EXPIRES_AFTER_DAYS } from "@/lib/constants";
 import { formatRelativeDate } from "@/utils/formatDate";
 import { eq } from "drizzle-orm";
 
@@ -65,7 +66,7 @@ export default async function RelistPage({
     title = `${listing.title} is hidden`;
     description =
       listing.status === "RESERVED"
-        ? `On hold for ${holder?.name ?? "a buyer"}${listing.heldAt ? ` since ${formatRelativeDate(listing.heldAt)}` : ""}. Did the deal fall through?`
+        ? `On hold for ${holder?.name ?? "a buyer"}${listing.heldAt ? ` since ${formatRelativeDate(listing.heldAt)}` : ""}. Sold it? Mark it sold. Otherwise it comes back on the marketplace ${HOLD_EXPIRES_AFTER_DAYS} days after the hold started, or relist it now.`
         : "It was hidden after a long time without changes. Still selling it?";
     body = <RelistPanel listingId={listing.id} />;
   } else if (listing.status === "AVAILABLE") {

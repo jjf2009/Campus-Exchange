@@ -108,6 +108,13 @@ export async function backdateE2EListing(listingId: string, daysAgo: number) {
     .where(eq(listings.id, listingId));
 }
 
+export async function backdateE2EHold(listingId: string, daysAgo: number) {
+  await db
+    .update(listings)
+    .set({ heldAt: new Date(Date.now() - daysAgo * 86_400_000) })
+    .where(eq(listings.id, listingId));
+}
+
 export async function getE2ENotificationCount() {
   const rows = await db.select({ id: notifications.id }).from(notifications);
   return rows.length;

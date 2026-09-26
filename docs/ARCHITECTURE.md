@@ -13,8 +13,9 @@ Version 1.0
 >   and 303-redirects to a `wa.me` link whose message contains the relist link.
 > - `app/listing/[id]/relist/page.tsx`: seller-only page to relist or mark sold.
 > - `actions/listings.ts`: `relistListing`, `markListingSold(listingId, soldToUserId?)`.
-> - `app/api/cron/listings/route.ts`: daily silent job that hides listings
->   untouched for 30 days (`EXPIRED`), protected by `CRON_SECRET`.
+> - `app/api/cron/listings/route.ts`: daily silent job, protected by
+>   `CRON_SECRET`: relists holds older than 7 days, then hides listings
+>   untouched for 30 days (`EXPIRED`).
 > - `purchase_requests` and `notifications` tables are kept for history only.
 
 # Purpose

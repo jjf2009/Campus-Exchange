@@ -15,7 +15,11 @@ import { Sticker } from "@/components/brand";
 import { getListingById } from "@/db/queries/listings";
 import { getListingContactBuyers } from "@/db/queries/contacts";
 import { requireCompleteProfile } from "@/lib/auth";
-import { CATEGORY_EMOJI, getCategoryImage } from "@/lib/constants";
+import {
+  CATEGORY_EMOJI,
+  HOLD_EXPIRES_AFTER_DAYS,
+  getCategoryImage,
+} from "@/lib/constants";
 import { formatFullDate, formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
 import type { Category, ListingStatus } from "@/types";
@@ -76,7 +80,7 @@ export default async function ListingDetailPage({
     <div className="space-y-3">
       <p className="font-medium">
         {listing.status === "RESERVED"
-          ? `📌 On hold for ${holderName ?? "a buyer"}. It's hidden while you talk. Relist it if the deal falls through.`
+          ? `📌 On hold for ${holderName ?? "a buyer"}. Mark it sold if it sells, or it comes back on the marketplace ${HOLD_EXPIRES_AFTER_DAYS} days after the hold started.`
           : listing.status === "EXPIRED"
             ? "Hidden after 30 days without changes. Relist it if it's still for sale."
             : "Your listing. Buyers will message you on WhatsApp."}

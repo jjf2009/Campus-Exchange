@@ -23,6 +23,7 @@ No online payments — students list items and buyers chat with the seller on Wh
 - GEC-only login (`@gec.ac.in` Google accounts)
 - One-tap "Chat on WhatsApp" that puts the item on hold and hides it from the marketplace
 - Relist link inside the WhatsApp message if the deal falls through
+- Holds auto-relist after 7 days unless marked sold
 - No notifications or emails; untouched listings quietly hide after 30 days
 - Mark item sold
 - Seller dashboard (overview, listings, interested buyers, profile)
@@ -120,19 +121,22 @@ Student lists item
   → Buyer taps "Chat on WhatsApp"
        ├ the item goes ON HOLD for that buyer (hidden from the marketplace)
        └ WhatsApp opens with a pre-filled message to the seller:
-           "GEC Exchange has hidden this item while we talk.
-            If our deal doesn't work out, put it back here: <link>/relist"
+           "GEC Exchange has hidden this item while we talk. If it sells,
+            mark it sold here. Otherwise it comes back in 7 days: <link>/relist"
   → Students meet on campus and pay in person
-  → Deal done: nothing to do (it stays hidden). Optionally tap "Mark sold".
-  → Deal fell through: seller taps the relist link (sign-in required)
+  → Deal done: seller taps the link → "Mark as sold" (sign-in required)
+  → Deal fell through: nothing to do. It returns to the marketplace after
+    7 days, or the seller can relist it sooner from the same link
 ```
 
 - A buyer can have at most **2 items on hold** at once, and contact at most 15 new sellers a day.
 - If two buyers tap at the same moment, only one gets the hold. The other sees
   "Someone is already talking to the seller".
-- **Silent safety net:** a daily Vercel Cron (`vercel.json` → `/api/cron/listings`, protected by
-  `CRON_SECRET`) hides live listings nobody has touched in 30 days (for items sold outside the
-  app). Sellers can relist from their dashboard.
+- **Daily Vercel Cron** (`vercel.json` → `/api/cron/listings`, protected by `CRON_SECRET`), no
+  notifications:
+  - holds older than **7 days** go back on the marketplace (unless marked sold)
+  - live listings nobody has touched in **30 days** are hidden (for items sold outside the app);
+    sellers can relist from their dashboard
 
 ## Docs
 

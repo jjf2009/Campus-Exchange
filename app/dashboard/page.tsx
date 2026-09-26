@@ -16,7 +16,7 @@ import {
   getSellerStats,
 } from "@/db/queries/listings";
 import { requireCompleteProfile } from "@/lib/auth";
-import { EXPIRE_AFTER_DAYS } from "@/lib/constants";
+import { EXPIRE_AFTER_DAYS, HOLD_EXPIRES_AFTER_DAYS } from "@/lib/constants";
 import { formatRelativeDate } from "@/utils/formatDate";
 import { formatPrice } from "@/utils/formatPrice";
 import type { ListingStatus } from "@/types";
@@ -50,7 +50,8 @@ export default async function DashboardPage() {
               Hidden right now
             </CardTitle>
             <CardDescription className="font-medium text-ink/80">
-              Deal fell through? Relist it. Done? Mark it sold.
+              Sold? Mark it sold, or it comes back after{" "}
+              {HOLD_EXPIRES_AFTER_DAYS} days. Deal off? Relist it now.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MAX_ACTIVE_HOLDS } from "@/lib/constants";
+import { HOLD_EXPIRES_AFTER_DAYS, MAX_ACTIVE_HOLDS } from "@/lib/constants";
 
 export type ContactState =
   /** Live: tapping puts it on hold and opens WhatsApp. */
@@ -21,7 +21,7 @@ const ERRORS: Record<string, string> = {
 };
 
 const UNAVAILABLE: Record<Exclude<ContactState, "available" | "held-by-you">, string> = {
-  held: "Someone is already talking to the seller about this. Check back later: it comes back if the deal falls through.",
+  held: `Someone is already talking to the seller about this. If the deal doesn't happen, it comes back within ${HOLD_EXPIRES_AFTER_DAYS} days.`,
   sold: "This item has been sold.",
   hidden: "This listing is hidden right now.",
 };
@@ -72,8 +72,8 @@ export function ContactSellerButton({
       </form>
       <p className="text-sm font-medium text-muted-foreground">
         {state === "held-by-you"
-          ? "📌 This item is on hold for you and hidden from everyone else."
-          : "Opens WhatsApp with the seller. The item is held for you while you talk."}
+          ? `📌 On hold for you and hidden from everyone else for up to ${HOLD_EXPIRES_AFTER_DAYS} days.`
+          : `Opens WhatsApp with the seller. The item is held for you for up to ${HOLD_EXPIRES_AFTER_DAYS} days while you talk.`}
       </p>
     </div>
   );

@@ -17,6 +17,8 @@ export function isAllowedEmail(email: string | null | undefined): boolean {
 
 /** Live listings nobody has touched in this many days are hidden (cron). */
 export const EXPIRE_AFTER_DAYS = 30;
+/** A hold ends and the item returns to the marketplace after this many days. */
+export const HOLD_EXPIRES_AFTER_DAYS = 7;
 /** Items one buyer can have on hold at the same time. */
 export const MAX_ACTIVE_HOLDS = 2;
 /** New sellers a buyer may contact per 24h (anti-scraping). */

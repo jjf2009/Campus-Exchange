@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import {
+  backdateE2EHold,
   backdateE2EListing,
   getE2EContactsForListing,
   getE2EListingById,
@@ -74,6 +75,7 @@ test("chat opens WhatsApp and puts the item on hold", async ({ browser }) => {
   const message = decodeURIComponent(url);
   expect(message).toContain("E2E Test Boiler");
   expect(message).toContain("hidden this item while we talk");
+  expect(message).toContain("comes back on the marketplace in 7 days");
   expect(message).toContain(`/listing/${listingId}/relist`);
 
   const buyerOne = await getE2EUserByEmail(BUYER_ONE);
@@ -164,12 +166,48 @@ test("cron quietly hides listings untouched for 30 days", async ({ request }) =>
   const auth = { headers: { authorization: `Bearer ${CRON_SECRET}` } };
 
   await backdateE2EListing(listingId, 29);
-  expect(await (await request.get("/api/cron/listings", auth)).json()).toEqual({ expired: 0 });
+  expect(await (await request.get("/api/cron/listings", auth)).json()).toEqual({
+    relisted: 0,
+    expired: 0,
+  });
 
   await backdateE2EListing(listingId, 31);
-  expect(await (await request.get("/api/cron/listings", auth)).json()).toEqual({ expired: 1 });
+  expect(await (await request.get("/api/cron/listings", auth)).json()).toEqual({
+    relisted: 0,
+    expired: 1,
+  });
   expect((await getE2EListingById(listingId))?.status).toBe("EXPIRED");
   expect(await getE2ENotificationCount()).toBe(0);
+});
+
+test("cron puts holds older than 7 days back on the marketplace", async ({ browser, request }) => {
+  await chatOnWhatsApp(await loginAs(browser, BUYER_ONE, `/listing/${listingId}`));
+  const auth = { headers: { authorization: `Bearer ${CRON_SECRET}` } };
+
+  await backdateE2EHold(listingId, 6);
+  expect(await (await request.get("/api/cron/listings", auth)).json()).toMatchObject({ relisted: 0 });
+  expect((await getE2EListingById(listingId))?.status).toBe("RESERVED");
+
+  // Old listing too: relisting resets the 30-day clock so it isn't expired.
+  await backdateE2EHold(listingId, 8);
+  await backdateE2EListing(listingId, 40);
+  expect(await (await request.get("/api/cron/listings", auth)).json()).toEqual({
+    relisted: 1,
+    expired: 0,
+  });
+  const listing = await getE2EListingById(listingId);
+  expect(listing?.status).toBe("AVAILABLE");
+  expect(listing?.heldByUserId).toBeNull();
+
+  // Sold items are never relisted.
+  const sold = await seedE2EListing("Sold Item");
+  await chatOnWhatsApp(await loginAs(browser, BUYER_TWO, `/listing/${sold.id}`));
+  const seller = await loginAs(browser, SELLER, `/listing/${sold.id}/relist`);
+  await seller.getByRole("button", { name: /mark as sold/ }).click();
+  await seller.waitForURL(new RegExp(`/listing/${sold.id}$`));
+  await backdateE2EHold(sold.id, 30);
+  await request.get("/api/cron/listings", auth);
+  expect((await getE2EListingById(sold.id))?.status).toBe("SOLD");
 });
 
 test("non-college accounts cannot sign in", async ({ page }) => {
