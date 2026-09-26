@@ -14,7 +14,9 @@ export async function signInWithGoogle(next = "/marketplace") {
     options: {
       redirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(next)}`,
       // Hint only (Google pre-selects college accounts); enforced server-side.
-      queryParams: { hd: ALLOWED_EMAIL_DOMAIN },
+      ...(ALLOWED_EMAIL_DOMAIN
+        ? { queryParams: { hd: ALLOWED_EMAIL_DOMAIN } }
+        : {}),
     },
   });
 

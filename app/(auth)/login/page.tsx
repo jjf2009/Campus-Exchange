@@ -32,7 +32,7 @@ export default async function LoginPage({
           wiggle
           className="absolute -top-4 -right-3 text-xs"
         >
-          GEC only ★
+          For GEC ★
         </Sticker>
         <CardHeader className="text-center">
           <Link href="/" className="mx-auto mb-3" aria-label="Home">
@@ -42,15 +42,16 @@ export default async function LoginPage({
             Welcome to {APP_NAME}
           </CardTitle>
           <CardDescription>
-            Sign in with your @{ALLOWED_EMAIL_DOMAIN} Google account to buy and
-            sell campus essentials.
+            Sign in with your{" "}
+            {ALLOWED_EMAIL_DOMAIN ? `@${ALLOWED_EMAIL_DOMAIN} ` : ""}Google
+            account to buy and sell campus essentials.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {params.error ? (
             <p className="rounded-lg border-2 border-ink bg-pink px-3 py-2 text-center text-sm font-semibold text-ink">
               {params.error === "domain"
-                ? `Please sign in with your @${ALLOWED_EMAIL_DOMAIN} college account.`
+                ? `Please sign in with your @${ALLOWED_EMAIL_DOMAIN ?? "college"} account.`
                 : "Sign-in failed. Please try again."}
             </p>
           ) : null}

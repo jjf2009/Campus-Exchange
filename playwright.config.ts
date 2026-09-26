@@ -15,6 +15,8 @@ export default defineConfig({
     env: {
       E2E_TEST_MODE: "true",
       CRON_SECRET: "e2e-cron-secret",
+      // Exercise the optional college-only restriction in tests.
+      ALLOWED_EMAIL_DOMAIN: "gec.ac.in",
     },
   },
   projects: [

@@ -169,7 +169,7 @@ export default async function ListingDetailPage({
                 <span className="font-display text-sm font-extrabold tracking-widest uppercase">
                   Seller ID
                 </span>
-                <span className="text-xs font-bold">GEC · Verified</span>
+                <span className="text-xs font-bold">GEC student</span>
               </div>
               <div className="flex items-center gap-4 p-4">
                 <div className="flex size-16 shrink-0 -rotate-3 items-center justify-center rounded-lg border-2 border-ink bg-sun font-display text-2xl font-extrabold">
