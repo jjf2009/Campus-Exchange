@@ -20,7 +20,7 @@ No online payments — students list items and buyers chat with the seller on Wh
 - Marketplace with search + category filters
 - Create / edit / soft-delete listings
 - Image upload to Supabase Storage
-- GEC-only login (`@gec.ac.in` Google accounts)
+- Google login (optionally restricted to college accounts via `ALLOWED_EMAIL_DOMAIN`)
 - One-tap "Chat on WhatsApp" that puts the item on hold and hides it from the marketplace
 - Relist link inside the WhatsApp message if the deal falls through
 - Holds auto-relist after 7 days unless marked sold
@@ -76,6 +76,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (server only) |
 | `DATABASE_URL` | Postgres connection string |
 | `NEXT_PUBLIC_APP_URL` | App origin (`http://localhost:3000`) |
+| `ALLOWED_EMAIL_DOMAIN` | Optional. Unset = any Google account can sign in. Set to `gec.ac.in` to allow only college accounts |
 | `CRON_SECRET` | Secret Vercel Cron sends to `/api/cron/listings` (set in Vercel project env) |
 | `E2E_TEST_MODE` | Enables the test-only login route |
 

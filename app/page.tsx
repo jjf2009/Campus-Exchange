@@ -93,7 +93,7 @@ export default async function LandingPage() {
                   No bargaining by email
                 </Sticker>
                 <Sticker color="paper" tilt={3}>
-                  @gec.ac.in only
+                  Made for GEC
                 </Sticker>
               </div>
             </div>

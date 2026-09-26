@@ -6,13 +6,19 @@ export const APP_DESCRIPTION =
 
 export const DEFAULT_PAGE_SIZE = 20;
 
-/** Only Google accounts on this domain may sign in. */
-export const ALLOWED_EMAIL_DOMAIN = "gec.ac.in";
+/**
+ * Optional sign-in restriction (server-side env var). Unset = any Google
+ * account can sign in. Set ALLOWED_EMAIL_DOMAIN=gec.ac.in once college emails
+ * are active to allow only college accounts.
+ */
+export const ALLOWED_EMAIL_DOMAIN: string | null =
+  process.env.ALLOWED_EMAIL_DOMAIN?.trim().replace(/^@/, "").toLowerCase() ||
+  null;
 
 export function isAllowedEmail(email: string | null | undefined): boolean {
-  return Boolean(
-    email && email.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`)
-  );
+  if (!email) return false;
+  if (!ALLOWED_EMAIL_DOMAIN) return true;
+  return email.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`);
 }
 
 /** Live listings nobody has touched in this many days are hidden (cron). */
